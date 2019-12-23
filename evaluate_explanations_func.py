@@ -15,7 +15,6 @@ from utilities import *
 import shap
 from scipy import *
 from scipy.sparse import *
-faith = []
 
 def get_tree_explanation(tree, v):
     t = tree.tree_
@@ -125,9 +124,8 @@ class ExplanationEvaluator:
           exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)
           exp_features = set([x[0] for x in exp])
           test_results[d][c].append(float(len(true_features.intersection(exp_features))) / len(true_features))
-          # TODO mean
-          faith[d][c].append(faithfulness(exp, 0.5, self.classifiers[d][c], self.test_vectors[d][i],
-                                          csr_matrix(self.test_vectors[d][i][0].shape, dtype=int8)))
+          # TODO mean??
+          faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           if max_examples and i >= max_examples:
             break
     return train_results, test_results, faith
@@ -148,7 +146,8 @@ def main(dataset, algorithm, explain_method, parameters):
     rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
     kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
     printLog(path, 'Num samples lime', num_samples)
-    explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples, return_mean=False, verbose=False, return_mapped=True)
+    explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
+                                                     return_mean=False, verbose=False, return_mapped=True)
     explain_fn = explainer.explain_instance
   elif explain_method == 'parzen':
     sigmas = {'multi_polarity_electronics': {'tree': 0.5, 'l1logreg': 1},
@@ -181,7 +180,7 @@ def main(dataset, algorithm, explain_method, parameters):
   out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
   return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
           'score':  np.mean(test_results[dataset][algorithm]),
-          'faithfullness': faith[dataset][algorithm],
+          'faithfulness': faith[dataset][algorithm],
           'calcTime': round((datetime.datetime.now()-startTime).total_seconds()/60,3)}
 
 if __name__ == "__main__":

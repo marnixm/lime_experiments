@@ -7,7 +7,8 @@ from sklearn import linear_model
 from sklearn import tree
 from sklearn import svm
 # PUT POLARITY DATASET PATH HERE
-POLARITY_PATH = 'C:\\Users\\marnix.maas\\Data\\multi_polarity_books\\'
+POLARITY_PATH = os.path.abspath(os.curdir) + '\\Data\\multi_polarity_books\\'
+
 def LoadDataset(dataset_name):
   if dataset_name.endswith('ng'):
     if dataset_name == '2ng':
