@@ -101,14 +101,16 @@ class ExplanationEvaluator:
     budget = 10
     train_results = {}
     test_results = {}
-    faith = []
+    faith = {}
     for d in self.train_data:
       train_results[d] = {}
       test_results[d] = {}
+      faith[d] = {}
       print('Dataset:', d)
       for c in self.classifiers[d]:
         train_results[d][c] = []
         test_results[d][c] = []
+        faith[d][c] = []
         if c == 'l1logreg':
           c_features = self.classifiers[d][c].coef_.nonzero()[1]
         print('classifier:', c) 
@@ -121,16 +123,14 @@ class ExplanationEvaluator:
             continue
           to_get = budget
           exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)
-          a = faithfulness(exp, 0.5, self.classifiers[d][c], self.test_vectors[d][i],
-                           csr_matrix(self.test_vectors[d][i][0].shape, dtype=int8))
-          if not np.isnan(a):
-            faith.append(a)
-
           exp_features = set([x[0] for x in exp])
           test_results[d][c].append(float(len(true_features.intersection(exp_features))) / len(true_features))
+          # TODO mean
+          faith[d][c].append(faithfulness(exp, 0.5, self.classifiers[d][c], self.test_vectors[d][i],
+                                          csr_matrix(self.test_vectors[d][i][0].shape, dtype=int8)))
           if max_examples and i >= max_examples:
             break
-    return train_results, test_results
+    return train_results, test_results, faith
 
 def main(dataset, algorithm, explain_method, parameters):
   #added by Marnix
@@ -172,14 +172,16 @@ def main(dataset, algorithm, explain_method, parameters):
                                          nsamples=nsamples, num_features=num_features, K=K)
     explain_fn = explainer.explain_instance
 
-  train_results, test_results = evaluator.measure_explanation_hability(explain_fn,
+  train_results, test_results, faith = evaluator.measure_explanation_hability(explain_fn,
                                                                        max_examples=parameters['max_examples'])
   #print results
   printLog(path, 'Finish', datetime.datetime.now().strftime('%H.%M.%S'))
   printLog(path, 'Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
   printLog(path, 'Average test: ', np.mean(test_results[dataset][algorithm]))
   out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
-  return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method, 'score':  np.mean(test_results[dataset][algorithm]),
+  return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
+          'score':  np.mean(test_results[dataset][algorithm]),
+          'faithfullness': faith[dataset][algorithm],
           'calcTime': round((datetime.datetime.now()-startTime).total_seconds()/60,3)}
 
 if __name__ == "__main__":
