@@ -11,8 +11,11 @@ from load_datasets import *
 from sklearn.metrics import accuracy_score
 #added
 import datetime
-from utilities import printLog
+from utilities import *
 import shap
+from scipy import *
+from scipy.sparse import *
+faith = []
 
 def get_tree_explanation(tree, v):
     t = tree.tree_
@@ -98,6 +101,7 @@ class ExplanationEvaluator:
     budget = 10
     train_results = {}
     test_results = {}
+    faith = []
     for d in self.train_data:
       train_results[d] = {}
       test_results[d] = {}
@@ -116,7 +120,13 @@ class ExplanationEvaluator:
           if len(true_features) == 0:
             continue
           to_get = budget
-          exp_features = set([x[0] for x in explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)])
+          exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)
+          a = faithfulness(exp, 0.5, self.classifiers[d][c], self.test_vectors[d][i],
+                           csr_matrix(self.test_vectors[d][i][0].shape, dtype=int8))
+          if not np.isnan(a):
+            faith.append(a)
+
+          exp_features = set([x[0] for x in exp])
           test_results[d][c].append(float(len(true_features.intersection(exp_features))) / len(true_features))
           if max_examples and i >= max_examples:
             break
@@ -162,10 +172,8 @@ def main(dataset, algorithm, explain_method, parameters):
                                          nsamples=nsamples, num_features=num_features, K=K)
     explain_fn = explainer.explain_instance
 
-  if not parameters['max_examples']:
-    train_results, test_results = evaluator.measure_explanation_hability(explain_fn)
-  else:
-    train_results, test_results = evaluator.measure_explanation_hability(explain_fn, max_examples=parameters['max_examples'])
+  train_results, test_results = evaluator.measure_explanation_hability(explain_fn,
+                                                                       max_examples=parameters['max_examples'])
   #print results
   printLog(path, 'Finish', datetime.datetime.now().strftime('%H.%M.%S'))
   printLog(path, 'Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')

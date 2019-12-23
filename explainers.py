@@ -1,51 +1,62 @@
-from abc import ABCMeta, abstractmethod
-import numpy as np
 import scipy as sp
-from sklearn import linear_model
-import sklearn.metrics.pairwise
 import shap
+import numpy as np
+import sklearn.metrics.pairwise
+from scipy import *
+from scipy.sparse import *
+from sklearn import linear_model
+
 
 ###############################
 ## Shap Explainer - added by Marnix
 ###############################
 class ShapExplainer:
   def __init__(self, model, background_data, nsamples, num_features, K):
-    print("Initialising SHAP...")
     self.nsamples=nsamples
     self.num_features=num_features
-    #shap.initjs()
-    cluster = shap.kmeans(background_data.todense(), K)  # background dataset to use for integrating out features
-    self.explainer = shap.KernelExplainer(model.predict_proba, cluster, logit='identity')
-    print("SHAP kernel ready")
-  #evaluate
-  def explain_instance(self, instance_vector,_,__,___,____):
+    #cluster = shap.kmeans(background_data.todense(), K)  # background dataset to use for integrating out features
+    zeros = csr_matrix(background_data[0].shape, dtype=int8) #empty dataframe, because missing words should be represented by 0
+    self.explainer = shap.KernelExplainer(model.predict_proba, zeros, logit='identity')
+  def explain_instance(self, *args, **kwds):
+    instance_vector = args[0]
     shap_values = self.explainer.shap_values(instance_vector, nsamples=self.nsamples, l1_reg=self.num_features)
-    shap_instance = shap_values[0][0] #explanation for negative result
-    #print('len', sum(shap_instance!=0), shap_instance.nonzero())
-    #TODO this is not always 10^
+    if len(kwds)==1: #trust
+      neg_pos = 1 if kwds['predictPositive'] else 0
+      shap_instance = shap_values[neg_pos][0]  # explanation for negative result
+    else: #evaluate
+      shap_instance = shap_values[0][0]
+    # print('len', sum(shap_instance!=0), shap_instance.nonzero())
+    # TODO this is not always 10^
     used_features = shap_instance.nonzero()[0]
     model_coef = shap_instance[used_features]
-    return sorted(zip(used_features,model_coef), key=lambda x: np.abs(x[1]), reverse=True)
-  #trust
+    return sorted(zip(used_features, model_coef), key=lambda x: np.abs(x[1]), reverse=True)
+
+"""  def explain_instance(self, instance_vector,_,__,___,____):
+    shap_values = self.explainer.shap_values(instance_vector, nsamples=self.nsamples, l1_reg=self.num_features)
+    shap_instance = shap_values[0][0]  # explanation for negative result
+    # print('len', sum(shap_instance!=0), shap_instance.nonzero())
+    # TODO this is not always 10^
+    used_features = shap_instance.nonzero()[0]
+    model_coef = shap_instance[used_features]
+    return sorted(zip(used_features, model_coef), key=lambda x: np.abs(x[1]), reverse=True)
+#Trust
   def explain_instance(self, instance_vector, predictPositive):
-    #predictPositive=1 for positive instances
+    pos_neg = 1 if predictPositive else 0 #predictPositive=1 for positive instances
     shap_values = self.explainer.shap_values(instance_vector, nsamples=self.nsamples, l1_reg=self.num_features)
-    shap_instance = shap_values[predictPositive][0] #explanation for negative result
+    shap_instance = shap_values[pos_neg][0] #explanation for negative result
     #print('len', sum(shap_instance!=0), shap_instance.nonzero())
     #TODO this is not always 10^
     used_features = shap_instance.nonzero()[0]
     model_coef = shap_instance[used_features]
-    return sorted(zip(used_features,model_coef), key=lambda x: np.abs(x[1]), reverse=True)
-  '''def predict_instance_proba(self, instance_vector, predictPositive):
+    return sorted(zip(used_features,model_coef), key=lambda x: np.abs(x[1]), reverse=True)"""
+'''def predict_instance_proba(self, instance_vector, predictPositive):
     prob = sum([x[predictPositive] for x in explanation if x[0] in instance_vector.nonzero()[1]])
     #old
     wordCount = np.array([instance_vector[:,i].nnz for i in intersection])
     coef = np.array([value[idx.index(i)] for i in intersection])
     prob2 = wordCount.dot(coef)
     return np.array([1-prob, prob])
-  '''
-  def reset(self):
-    pass
+'''
 
 ###############################
 ## Random Explainer

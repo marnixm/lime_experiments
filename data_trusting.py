@@ -74,7 +74,6 @@ def main(dataset, algorithm, parameters):
   kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
   LIME = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text,
                                               num_samples=num_samples, return_mean=True, verbose=False, return_mapped=True)
-  #TODO verbose false
   K, nsamples = parameters['shap']['K'], parameters['shap']['nsamples']
   SHAP = explainers.ShapExplainer(classifier, train_vectors, nsamples=nsamples,
                                   num_features=parameters['shap']['num_features'], K=K)
@@ -90,28 +89,39 @@ def main(dataset, algorithm, parameters):
 
   random = explainers.RandomExplainer()
   exps = {}
-  explainer_names = ['shap', 'lime','parzen', 'greedy', 'random']
+  diff = {}
+  accuracy = {}
+  explainer_names = ['shap', 'lime','parzen'] #, 'greedy', 'random']
+  trust_fn = lambda prev, curr: ((prev > 0.5 and curr > 0.5) or (prev <= 0.5 and curr <= 0.5))
+  trust_fn_all = lambda exp, unt: len([x[0] for x in exp if x[0] in unt]) == 0
   for expl in explainer_names: exps[expl] = []
+  for expl in explainer_names[:3]: diff[expl] = []
+  for expl in explainer_names: accuracy[expl] = []
 
   for i in range(test_vectors.shape[0]):
     if i==max_examples: break
     if i%100==0: print(i,'/',test_vectors.shape[0])
     sys.stdout.flush()
-    #exp, mean come from  pertubations around the instance
+    #exp, mean come from pertubations around the instance
     exp, mean = LIME.explain_instance(test_vectors[i], 1, classifier.predict_proba, num_features)
+    accuracy['lime'].append(trust_fn(predict_probas[i], mean + sum([x[1] for x in exp])))
     exps['lime'].append((exp, mean))
 
-    exp = SHAP.explain_instance(test_vectors[i], predictPositive=1)
+    exp = SHAP.explain_instance(test_vectors[i], predictPositive=True)
+    accuracy['shap'].append(trust_fn(predict_probas[i],
+                                     SHAP.explainer.expected_value[1] + sum([x[1] for x in exp])))
     exps['shap'].append(exp)
 
     exp = parzen.explain_instance(test_vectors[i], 1, classifier.predict_proba, num_features, None)
     mean = parzen.predict_proba(test_vectors[i])[1]
+    accuracy['parzen'].append(trust_fn(predict_probas[i],
+                                     mean + sum([x[1] for x in exp])))
     exps['parzen'].append((exp, mean))
 
-    exp = random.explain_instance(test_vectors[i], 1, None, num_features, None)
+    """exp = random.explain_instance(test_vectors[i], 1, None, num_features, None)
     exps['random'].append(exp)
     exp = explainers.explain_greedy_martens(test_vectors[i], predictions[i], classifier.predict_proba, num_features)
-    exps['greedy'].append(exp)
+    exps['greedy'].append(exp)"""
 
   precision = {}
   recall = {}
@@ -128,45 +138,46 @@ def main(dataset, algorithm, parameters):
     print('Number of suspect predictions', len(mistrust_idx))
     shouldnt_trust = set(mistrust_idx)
     flipped_preds_size.append(len(shouldnt_trust))
+
     mistrust = collections.defaultdict(lambda:set())
     trust = collections.defaultdict(lambda: set())
-    trust_fn = lambda prev, curr: (prev > 0.5 and curr > 0.5) or (prev <= 0.5 and curr <= 0.5)
-    trust_fn_all = lambda exp, unt: len([x[0] for x in exp if x[0] in unt]) == 0
     for i in range(test_vectors.shape[0]):
       if i==max_examples: break
-      #print(untrustworthy)
       exp, mean = exps['lime'][i]
       #print('lime',round(mean,2), [(x[0], round(x[1], 1)) for x in exp])
       prev_tot = predict_probas[i]
-      prev_tot2 = sum([x[1] for x in exp]) + mean
-      tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy])
-      trust['lime'].add(i) if trust_fn(tot, prev_tot) else mistrust['lime'].add(i)
-      l = round(sum([x[1] for x in exp if x[0] in untrustworthy]),1)
-      l_int = len([x[0] for x in exp if x[0] in untrustworthy])
-      meanLime = round(mean,1)
+      prev_tot2 = sum([x[1] for x in exp]) + mean #what it should have been
+      tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy]) #discounted effect
+      trust['lime'].add(i) if trust_fn(tot, prev_tot2) else mistrust['lime'].add(i)
 
-      #TODO check shap
+      meanLime = round(mean, 1)
+      l = sum([x[1] for x in exp if x[0] in untrustworthy])
+      l_int = len([x[0] for x in exp if x[0] in untrustworthy])
+      diff['lime'].append((abs(prev_tot - mean), abs(l)))
+
       exp = exps['shap'][i]
       #print('shap',round(SHAP.explainer.expected_value[1],2),[(x[0], round(x[1],1)) for x in exp])
       prev_tot = predict_probas[i]
       prev_tot2 = SHAP.explainer.expected_value[1] + sum([x[1] for x in exp])
-      b = round(sum([x[1] for x in exp if x[0] in untrustworthy]),1)
-      b_int = len([x[0] for x in exp if x[0] in untrustworthy])
       tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy])
-      trust['shap'].add(i) if trust_fn(tot, prev_tot) else mistrust['shap'].add(i)
+      trust['shap'].add(i) if trust_fn(tot, prev_tot2) else mistrust['shap'].add(i)
 
-      print('lime', meanLime, "-" if l<0 else '+', abs(l), '| shap', round(SHAP.explainer.expected_value[1],1),
-            "-" if b<0 else '+', abs(b), "| pred:", round(prev_tot,1))
+      b = sum([x[1] for x in exp if x[0] in untrustworthy])
+      b_int = len([x[0] for x in exp if x[0] in untrustworthy])
+      diff['shap'].append((abs(prev_tot - SHAP.explainer.expected_value[1]), abs(b)))
+
+      #print('lime', meanLime, "-" if l<0 else '+', abs(l), '| shap', round(SHAP.explainer.expected_value[1],1),
+      #      "-" if b<0 else '+', abs(b), "| pred:", round(prev_tot,1))
 
       exp, mean = exps['parzen'][i]
       prev_tot = mean
       tot = mean - sum([x[1] for x in exp if x[0] in untrustworthy])
       trust['parzen'].add(i) if trust_fn(tot, prev_tot) else mistrust['parzen'].add(i)
-      exp = exps['random'][i]
+
+      """exp = exps['random'][i]
       trust['random'].add(i) if trust_fn_all(exp, untrustworthy) else mistrust['random'].add(i)
       exp = exps['greedy'][i]
-      trust['greedy'].add(i) if trust_fn_all(exp, untrustworthy) else mistrust['greedy'].add(i)
-
+      trust['greedy'].add(i) if trust_fn_all(exp, untrustworthy) else mistrust['greedy'].add(i)"""
 
     for expl in explainer_names:
       # switching the definition
@@ -209,7 +220,16 @@ def main(dataset, algorithm, parameters):
     printLog(path, expl, np.mean(f1[expl]), '+-', np.std(f1[expl]), 'pvalue', sp.stats.ttest_ind(f1[expl], f1[test_against])[1].round(4))
     results['F1'].update({expl: [np.mean(f1[expl]), np.std(f1[expl]), sp.stats.ttest_ind(f1[expl], f1[test_against])[1].round(4)]})
 
-  return results, round((datetime.datetime.now()-startTime).total_seconds()/60,3)
+  #added, to verify initial explanation accuracy
+  for expl in explainer_names:
+    """if expl=='random' or expl=='greedy':
+      accuracy[expl] = np.nan
+      continue"""
+    acc = accuracy[expl]
+    acc = sum(acc)/len(acc)
+    accuracy[expl] = acc
+
+  return results, round((datetime.datetime.now()-startTime).total_seconds()/60,3), diff, accuracy
 
 if __name__ == "__main__":
     main()

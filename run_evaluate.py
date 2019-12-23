@@ -5,14 +5,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pprint
 
-DATASETS = ['multi_polarity_books', 'multi_polarity_dvd'] #, 'multi_polarity_kitchen']
+DATASETS = ['multi_polarity_books'] #, 'multi_polarity_dvd', 'multi_polarity_kitchen']
 #TODO check l1/l2 regularization
 ALGORITHM = ['l1logreg', 'tree']
-EXPLAINER = ['lime', 'shap', 'parzen', 'greedy', 'random']
-#TODO check and run parameters
-PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
-              'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 5000, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
+EXPLAINER = ['shap', 'lime', 'parzen', 'greedy', 'random']
+PARAMS_5_2 = {'max_examples': 5, #if None than maximum is used
+              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 200, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
 results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
@@ -42,7 +41,7 @@ def plot_5_2(save=False, show=True):
   x = np.arange(len(EXPLAINER))
   width = 0.35
   results = pickle.load(open(path + filename1, "rb"))
-  bigfix, bigax = plt.subplots(2,2)
+  #bigfig, bigax = plt.subplots(2,3)
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
       fig, ax = plt.subplots()
@@ -51,7 +50,7 @@ def plot_5_2(save=False, show=True):
         ax.bar(x[e], recall, width)
 
       #set titles and axis
-      ax.ylim((0, 100)) #Todo: check
+      ax.set_ylim([0, 105])
       ax.set_ylabel('Recall (%)')
       ax.set_title('Evaluate recall'+' '+dat+' '+alg)
       ax.set_xticks(x)
@@ -76,4 +75,4 @@ def plot_5_2(save=False, show=True):
   return
 
 run_5_2(save=False)
-plot_5_2(save=True, show=False)
+#plot_5_2(save=True, show=True)
