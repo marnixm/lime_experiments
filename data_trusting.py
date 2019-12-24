@@ -44,7 +44,7 @@ def main(dataset, algorithm, parameters):
 
   #added by Marnix
   startTime = datetime.datetime.now()
-  path = os.path.abspath(os.curdir) 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/log_5.3/' + \
+  path = os.path.abspath(os.curdir) + '/log_5.3/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) + ' ' + dataset[-5:] \
          + ' ' + algorithm +'.txt'
   printLog(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))

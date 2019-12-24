@@ -133,7 +133,7 @@ class ExplanationEvaluator:
 def main(dataset, algorithm, explain_method, parameters):
   #added by Marnix
   startTime = datetime.datetime.now()
-  path = 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/log_5.2/' + \
+  path = os.path.abspath(os.curdir) + '/log_5.2/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) \
          + ' ' + dataset[-5:] + ' ' + algorithm + ' ' + explain_method +'.txt'
   printLog(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))
