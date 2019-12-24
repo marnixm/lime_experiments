@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import pprint
 import os
 
-DATASETS = ['multi_polarity_books'] #, 'multi_polarity_dvd', 'multi_polarity_kitchen']
+DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
 #TODO check l1/l2 regularization
 ALGORITHM = ['l1logreg', 'tree']
 EXPLAINER = ['shap', 'lime', 'parzen', 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': 200, #if None than maximum is used
+PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
               'lime': {'num_samples': 1000, 'rho': 25},  #nsamples to 15.000
               'shap': {'nsamples': 1000, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
               'max_iter_logreg': 2000,
@@ -49,6 +49,7 @@ def plot_5_2(file, save=False, show=True):
   #bigfig, bigax = plt.subplots(2,3)
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
+
       fig, ax = plt.subplots()
       for e, exp in enumerate(EXPLAINER):
         score = results[d][a][e]*100
@@ -57,7 +58,7 @@ def plot_5_2(file, save=False, show=True):
       #set titles and axis
       ax.set_ylim([0, 105])
       ax.set_ylabel('Recall (%)')
-      ax.set_title('Evaluate recall'+' '+dat+' '+alg)
+      ax.set_title('Evaluate '+ ('faithfulness' if file.find('faith')!=-1 else 'recall') +' '+dat+' '+alg)
       ax.set_xticks(x)
       ax.set_xticklabels(EXPLAINER)
       ax.set_yticklabels([])
@@ -73,11 +74,10 @@ def plot_5_2(file, save=False, show=True):
 
       if save: plt.savefig(path+dat+' '+alg+'.svg')
       if save: plt.savefig(path+dat+' '+alg+'.png')
-      if show: plt.show()
-      plt.clf()
+      if show: plt.show(block=True)
 
   plt.close()
   return
 
 run_5_2(save=True)
-plot_5_2(file=faithfile, save=True, show=True)
+plot_5_2(file=faithfile, save=True, show=False)
