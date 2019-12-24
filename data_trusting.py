@@ -19,7 +19,6 @@ import argparse
 import collections
 import datetime
 from utilities import printLog
-#import lime.limetabular
 
 def get_classifier(name, vectorizer, parameters):
   if name == 'logreg':
@@ -38,13 +37,14 @@ def get_classifier(name, vectorizer, parameters):
 def main(dataset, algorithm, parameters):
   num_features = parameters['num_features']
   percent_untrustworthy = parameters['percent_untrustworthy']
+
   num_rounds = parameters['num_rounds']
   max_examples = parameters['max_examples']
   test_against = parameters['test_against']
 
   #added by Marnix
   startTime = datetime.datetime.now()
-  path = 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/log_5.3/' + \
+  path = os.path.abspath(os.curdir) 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/log_5.3/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) + ' ' + dataset[-5:] \
          + ' ' + algorithm +'.txt'
   printLog(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))

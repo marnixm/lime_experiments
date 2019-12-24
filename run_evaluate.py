@@ -4,19 +4,20 @@ import pickle
 import matplotlib
 import matplotlib.pyplot as plt
 import pprint
+import os
 
 DATASETS = ['multi_polarity_books'] #, 'multi_polarity_dvd', 'multi_polarity_kitchen']
 #TODO check l1/l2 regularization
 ALGORITHM = ['l1logreg', 'tree']
 EXPLAINER = ['shap', 'lime', 'parzen', 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': 5, #if None than maximum is used
-              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 200, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
+PARAMS_5_2 = {'max_examples': 200, #if None than maximum is used
+              'lime': {'num_samples': 1000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 1000, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
 results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
 faith =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
-path = 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/Results_5.2/'
+path = os.path.abspath(os.curdir) + '/Results_5.2/'
 resultsfile, calcTimefile, faithfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p'
 
 def run_5_2(save=True):
@@ -78,5 +79,5 @@ def plot_5_2(file, save=False, show=True):
   plt.close()
   return
 
-#run_5_2(save=True)
-plot_5_2(file=faithfile, save=False, show=True)
+run_5_2(save=True)
+plot_5_2(file=faithfile, save=True, show=True)
