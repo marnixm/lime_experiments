@@ -2,7 +2,6 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-###for saving results e.d.
 
 def printLog(path, *args):
   text = ' '.join([str(arg) for arg in args])
@@ -15,7 +14,7 @@ def faithfulness(explanation, skmodel, instance):
   """
   explanability metric: faithfulness
   """
-  if len(explanation)<=1:
+  if len(explanation)<=2:
     #todo what to do with too small explanation?
     return np.nan
   model = []
@@ -37,5 +36,13 @@ def faithfulness(explanation, skmodel, instance):
   #  plt.show()
   #  print(explanation)
   #return correlation
+
+  if len(set(explain))<=1 or len(set(model))<=1:
+    # todo correlation between list and point does not exist
+    # explanation and model have no intersection
+    # inter = set([x[0] for x in explanation]).intersection(set(instance.nonzero()[1]))
+    # print(inter)
+    return np.nan
+
   c = np.corrcoef(model, explain)
   return abs(c[0, 1])

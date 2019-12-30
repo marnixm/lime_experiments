@@ -124,7 +124,6 @@ class ExplanationEvaluator:
           exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)
           exp_features = set([x[0] for x in exp])
           test_results[d][c].append(float(len(true_features.intersection(exp_features))) / len(true_features))
-          # TODO mean??
           faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           if max_examples and i >= max_examples:
             break
@@ -160,11 +159,12 @@ def main(dataset, algorithm, explain_method, parameters):
     explainer.fit(evaluator.train_vectors[dataset], cv_preds)
     explainer.sigma = sigmas[dataset][algorithm]
     explain_fn = explainer.explain_instance
-  elif explain_method == 'greedy':
-    explain_fn = explainers.explain_greedy
-  elif explain_method == 'random':
-    explainer = explainers.RandomExplainer()
-    explain_fn = explainer.explain_instance
+  #greedy/random cannot be score by faithfullness measure
+  #elif explain_method == 'greedy':
+  #  explain_fn = explainers.explain_greedy
+  #elif explain_method == 'random':
+  #  explainer = explainers.RandomExplainer()
+  #  explain_fn = explainer.explain_instance
   elif explain_method == 'shap':
     K, nsamples, num_features = parameters['shap']['K'], parameters['shap']['nsamples'], parameters['shap']['num_features']
     explainer = explainers.ShapExplainer(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
