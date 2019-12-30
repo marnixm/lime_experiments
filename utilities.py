@@ -12,12 +12,11 @@ def printLog(path, *args):
 
 
 def faithfulness(explanation, skmodel, instance):
-  #TODO check method
   """
   explanability metric: faithfulness
   """
   if len(explanation)<=1:
-    #what to do with too small explanation?
+    #todo what to do with too small explanation?
     return np.nan
   model = []
   explain = []

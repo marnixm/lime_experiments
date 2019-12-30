@@ -122,4 +122,4 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
   return
 
 #run_5_3(save=True)
-table_5_3(stats=['precision', 'recall','accuracy'], save=False, f2=True)
+table_5_3(stats=['precision', 'recall','accuracy', 'f2'], save=False, f2=True)
