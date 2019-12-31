@@ -7,12 +7,11 @@ import pprint
 import os
 
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
-#TODO check l1/l2 regularization
-ALGORITHM = ['l1logreg']# 'tree']
+ALGORITHM = ['l1logreg', 'tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
-              'lime': {'num_samples': 1000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 200, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
+PARAMS_5_2 = {'max_examples': 100, #if None than maximum is used
+              'lime': {'num_samples': 500, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 500, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
 results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
@@ -57,8 +56,9 @@ def plot_5_2(file, save=False, show=True):
 
       #set titles and axis
       ax.set_ylim([0, 105])
-      ax.set_ylabel('Recall (%)')
-      ax.set_title('Evaluate '+ ('faithfulness' if file.find('faith')!=-1 else 'recall') +' '+dat+' '+alg)
+      measure = ('faithfulness' if file.find('faith')!=-1 else 'recall')
+      ax.set_ylabel(measure + ' (%)')
+      ax.set_title('Evaluate '+ measure +' '+dat+' '+alg)
       ax.set_xticks(x)
       ax.set_xticklabels(EXPLAINER)
       ax.set_yticklabels([])
@@ -79,5 +79,5 @@ def plot_5_2(file, save=False, show=True):
   plt.close()
   return
 
-run_5_2(save=True)
-plot_5_2(file=faithfile, save=True, show=False)
+run_5_2(save=False)
+plot_5_2(file=faithfile, save=False, show=True)

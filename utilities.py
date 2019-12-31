@@ -20,22 +20,17 @@ def faithfulness(explanation, skmodel, instance):
   model = []
   explain = []
   #initial probs
-  model.append(skmodel.predict_proba(instance)[0][0])
-  exp_prob = sum([x[1] for x in explanation])
-  explain.append(exp_prob)
+  #model.append(skmodel.predict_proba(instance)[0][0])
+  exp_prob = 0 #sum([x[1] for x in explanation])
+  #explain.append(exp_prob)
 
   for idx, value in explanation:
     # discount removing feature
-    instance[0,idx] = 0 #background
-    model.append(skmodel.predict_proba(instance)[0][0])
-    exp_prob= exp_prob - value
-    explain.append(exp_prob)
-
-  #if len(model)>5:
-  #  plt.scatter(model, explain)
-  #  plt.show()
-  #  print(explanation)
-  #return correlation
+    ins = instance.copy()
+    ins[0,idx] = 0 #background
+    model.append(skmodel.predict_proba(ins)[0][0])
+    #exp_prob= exp_prob + value
+    explain.append(value)
 
   if len(set(explain))<=1 or len(set(model))<=1:
     # todo correlation between list and point does not exist
@@ -45,4 +40,6 @@ def faithfulness(explanation, skmodel, instance):
     return np.nan
 
   c = np.corrcoef(model, explain)
+  #plt.scatter(model, explain)
+  #plt.show()
   return abs(c[0, 1])

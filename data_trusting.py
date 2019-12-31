@@ -22,6 +22,7 @@ from utilities import printLog
 
 def get_classifier(name, vectorizer, parameters):
   if name == 'logreg':
+    #TODO should we add a regularization? use solver='saga'
     return linear_model.LogisticRegression(fit_intercept=True, solver='lbfgs')
   if name == 'random_forest':
     return ensemble.RandomForestClassifier(n_estimators=parameters['rf']['n_estimators'], random_state=1, max_depth=5, n_jobs=10)
