@@ -45,18 +45,20 @@ def plot_5_2(file, save=False, show=True):
   x = np.arange(len(EXPLAINER))
   width = 0.35
   results = pickle.load(open(path + file, "rb"))
+  measure = ('faithfulness' if file.find('faith')!=-1 else 'recall')
 
   ncol = results.shape[0]
   nrow = results.shape[1]
   nexp = results.shape[2]
   bigfig, bigax = plt.subplots(nrow, ncol, sharey=True, figsize=(12,8))
+  bigax[0,0].set_title('Evaluate '+ measure, fontsize=20)
 
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
       ax = bigax[a,d]
 
       # set x and y labels
-      if d==0: ax.set_ylabel(('faithfulness' if file.find('faith')!=-1 else 'recall') + ' (%)', fontsize=12)
+      if d==0: ax.set_ylabel(measure + ' (%)', fontsize=12)
       if a==1: ax.set_xlabel(dat, fontsize=15)
 
       for e, exp in enumerate(EXPLAINER):
@@ -82,15 +84,15 @@ def plot_5_2(file, save=False, show=True):
                      xytext=(0, 2),  # distance from text to points (x,y)
                      ha='center')  # horizontal alignment can be left, right or center
 
-      #if save: plt.savefig(path+dat+' '+alg+'.svg')
-      #if save: plt.savefig(path+dat+' '+alg+'.png')
-      #if show: plt.show(block=True)
+
 
   plt.tight_layout()
-  plt.show()
-
+  if save: plt.savefig(path+measure+' 5.2'+'.png') #.svg
+  if show: plt.show(block=True)
   plt.close()
   return
 
 #run_5_2(save=True)
-plot_5_2(file=faithfile, save=False, show=False)
+plot_5_2(file=resultsfile, save=True, show=False)
+plot_5_2(file=faithfile, save=True, show=True)
+
