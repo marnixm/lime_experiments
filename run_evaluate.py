@@ -7,6 +7,7 @@ import pprint
 import os
 
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
+DATA_NAMES = ['Books','Dvds','Kitchen']
 ALGORITHM = ['l1logreg', 'tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
 PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
@@ -51,9 +52,9 @@ def plot_5_2(file, save=False, show=True):
   nrow = results.shape[1]
   nexp = results.shape[2]
   bigfig, bigax = plt.subplots(nrow, ncol, sharey=True, figsize=(12,8))
-  bigax[0,0].set_title('Evaluate '+ measure, fontsize=20)
+  bigax[0,1].set_title('Evaluate '+ measure, fontsize=20)
 
-  for d, dat in enumerate(DATASETS):
+  for d, dat in enumerate(DATA_NAMES):
     for a, alg in enumerate(ALGORITHM):
       ax = bigax[a,d]
 
@@ -65,12 +66,8 @@ def plot_5_2(file, save=False, show=True):
         score = results[d][a][e]*100
         ax.bar(x[e], score, width)
 
-      #set titles and axis
+      #set axis
       ax.set_ylim([0, 105])
-
-      #measure = ('faithfulness' if file.find('faith')!=-1 else 'recall')
-      #ax.set_ylabel(measure + ' (%)')
-      #ax.set_title('Evaluate '+ measure +' '+dat+' '+alg)
       ax.set_xticks(x)
       ax.set_xticklabels(EXPLAINER)
       ax.set_yticklabels([])
@@ -84,8 +81,6 @@ def plot_5_2(file, save=False, show=True):
                      xytext=(0, 2),  # distance from text to points (x,y)
                      ha='center')  # horizontal alignment can be left, right or center
 
-
-
   plt.tight_layout()
   if save: plt.savefig(path+measure+' 5.2'+'.png') #.svg
   if show: plt.show(block=True)
@@ -93,6 +88,6 @@ def plot_5_2(file, save=False, show=True):
   return
 
 #run_5_2(save=True)
-plot_5_2(file=resultsfile, save=True, show=False)
+plot_5_2(file=resultsfile, save=True, show=True)
 plot_5_2(file=faithfile, save=True, show=True)
 
