@@ -9,9 +9,9 @@ import os
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
 ALGORITHM = ['l1logreg', 'tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': 100, #if None than maximum is used
-              'lime': {'num_samples': 500, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 500, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
+PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
+              'lime': {'num_samples': 5000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 5000, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels?, background data no longer used
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
 results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
@@ -79,5 +79,5 @@ def plot_5_2(file, save=False, show=True):
   plt.close()
   return
 
-run_5_2(save=False)
-plot_5_2(file=faithfile, save=False, show=True)
+run_5_2(save=True)
+plot_5_2(file=faithfile, save=True, show=False)
