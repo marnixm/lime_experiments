@@ -45,20 +45,30 @@ def plot_5_2(file, save=False, show=True):
   x = np.arange(len(EXPLAINER))
   width = 0.35
   results = pickle.load(open(path + file, "rb"))
-  #bigfig, bigax = plt.subplots(2,3)
+
+  ncol = results.shape[0]
+  nrow = results.shape[1]
+  nexp = results.shape[2]
+  bigfig, bigax = plt.subplots(nrow, ncol, sharey=True, figsize=(12,8))
+
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
+      ax = bigax[a,d]
 
-      fig, ax = plt.subplots()
+      # set x and y labels
+      if d==0: ax.set_ylabel(('faithfulness' if file.find('faith')!=-1 else 'recall') + ' (%)', fontsize=12)
+      if a==1: ax.set_xlabel(dat, fontsize=15)
+
       for e, exp in enumerate(EXPLAINER):
         score = results[d][a][e]*100
         ax.bar(x[e], score, width)
 
       #set titles and axis
       ax.set_ylim([0, 105])
-      measure = ('faithfulness' if file.find('faith')!=-1 else 'recall')
-      ax.set_ylabel(measure + ' (%)')
-      ax.set_title('Evaluate '+ measure +' '+dat+' '+alg)
+
+      #measure = ('faithfulness' if file.find('faith')!=-1 else 'recall')
+      #ax.set_ylabel(measure + ' (%)')
+      #ax.set_title('Evaluate '+ measure +' '+dat+' '+alg)
       ax.set_xticks(x)
       ax.set_xticklabels(EXPLAINER)
       ax.set_yticklabels([])
@@ -72,12 +82,15 @@ def plot_5_2(file, save=False, show=True):
                      xytext=(0, 2),  # distance from text to points (x,y)
                      ha='center')  # horizontal alignment can be left, right or center
 
-      if save: plt.savefig(path+dat+' '+alg+'.svg')
-      if save: plt.savefig(path+dat+' '+alg+'.png')
-      if show: plt.show(block=True)
+      #if save: plt.savefig(path+dat+' '+alg+'.svg')
+      #if save: plt.savefig(path+dat+' '+alg+'.png')
+      #if show: plt.show(block=True)
+
+  plt.tight_layout()
+  plt.show()
 
   plt.close()
   return
 
-run_5_2(save=True)
-plot_5_2(file=faithfile, save=True, show=False)
+#run_5_2(save=True)
+plot_5_2(file=faithfile, save=False, show=False)
