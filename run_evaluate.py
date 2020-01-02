@@ -9,6 +9,7 @@ import os
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
 DATA_NAMES = ['Books','Dvds','Kitchen']
 ALGORITHM = ['l1logreg', 'tree']
+ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
 PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
               'lime': {'num_samples': 5000, 'rho': 25},  #nsamples to 15.000
@@ -52,14 +53,17 @@ def plot_5_2(file, save=False, show=True):
   nrow = results.shape[1]
   nexp = results.shape[2]
   bigfig, bigax = plt.subplots(nrow, ncol, sharey=True, figsize=(12,8))
-  bigax[0,1].set_title('Evaluate '+ measure, fontsize=20)
+  bigax[0,1].set_title('Evaluate - '+ measure + ' %', fontsize=20)
 
   for d, dat in enumerate(DATA_NAMES):
-    for a, alg in enumerate(ALGORITHM):
+    for a, alg in enumerate(ALG_NAMES):
       ax = bigax[a,d]
 
       # set x and y labels
-      if d==0: ax.set_ylabel(measure + ' (%)', fontsize=12)
+      if d==0: ax.set_ylabel(alg, fontsize=15)
+        #todo add small label: recall% or faith%
+        #plt.rc('text', usetex=True)
+        #ax.set_ylabel(r'{\fontsize{30pt}{3em}\selectfont{}{'+alg+'\r}{\fontsize{18pt}{3em}\selectfont{}'+measure+' %}')
       if a==1: ax.set_xlabel(dat, fontsize=15)
 
       for e, exp in enumerate(EXPLAINER):
