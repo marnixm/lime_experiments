@@ -71,7 +71,7 @@ def plot_5_2(file, save=False, show=True):
         ax.bar(x[e], score, width)
 
       #set axis
-      ax.set_ylim([0, 105])
+      ax.set_ylim([-105 if np.any(results<0) else 0, 105])
       ax.set_xticks(x)
       ax.set_xticklabels(EXPLAINER)
       ax.set_yticklabels([])
@@ -92,6 +92,6 @@ def plot_5_2(file, save=False, show=True):
   return
 
 #run_5_2(save=True)
-plot_5_2(file=resultsfile, save=True, show=True)
-plot_5_2(file=faithfile, save=True, show=True)
+#plot_5_2(file=resultsfile, save=False, show=True)
+plot_5_2(file=faithfile, save=False, show=True)
 
