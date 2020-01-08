@@ -92,6 +92,6 @@ def plot_5_2(file, save=False, show=True):
   return
 
 #run_5_2(save=True)
-#plot_5_2(file=resultsfile, save=False, show=True)
-plot_5_2(file=faithfile, save=False, show=True)
+plot_5_2(file=resultsfile, save=True, show=True)
+plot_5_2(file=faithfile, save=True, show=True)
 

@@ -14,12 +14,12 @@ EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen'), ('greedy','
 
 #TODO check and run parameters
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
-              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000,
-              'shap': {'nsamples': 200, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
+              'lime': {'num_samples': 2000, 'rho': 25},  #nsamples to 15.000,
+              'shap': {'nsamples': 2000, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
               'rf': {'n_estimators': 100}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
-              'max_examples': 5, #None
+              'max_examples': None, #None
               'test_against': 'lime'}
 path = 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/Results_5.3/'
 result_file, time_file = 'result5.3', 'calcTime5.3.p'
