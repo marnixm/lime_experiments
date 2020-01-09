@@ -12,8 +12,8 @@ ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
 PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
-              'lime': {'num_samples': 5000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 5000, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels?, background data no longer used
+              'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 15000, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels?, background data no longer used
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
 results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
@@ -86,12 +86,12 @@ def plot_5_2(file, save=False, show=True):
                      ha='center')  # horizontal alignment can be left, right or center
 
   plt.tight_layout()
-  if save: plt.savefig(path+measure+' 5.2'+'.png') #.svg
+  if save: plt.savefig(path+measure+' 52'+'.png') #.svg
   if show: plt.show(block=True)
   plt.close()
   return
 
-#run_5_2(save=True)
+run_5_2(save=True)
 plot_5_2(file=resultsfile, save=True, show=True)
 plot_5_2(file=faithfile, save=True, show=True)
 

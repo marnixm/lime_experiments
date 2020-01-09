@@ -19,17 +19,12 @@ def faithfulness(explanation, skmodel, instance):
     return np.nan
   model = []
   explain = []
-  #initial probs
-  #model.append(skmodel.predict_proba(instance)[0][0])
-  exp_prob = 0 #sum([x[1] for x in explanation])
-  #explain.append(exp_prob)
 
   for idx, value in explanation:
     # discount removing feature
     ins = instance.copy()
     ins[0,idx] = 0 #background
     model.append(skmodel.predict_proba(ins)[0][0])
-    #exp_prob= exp_prob + value
     explain.append(value)
 
   if len(set(explain))<=1 or len(set(model))<=1:
@@ -42,4 +37,4 @@ def faithfulness(explanation, skmodel, instance):
   c = np.corrcoef(model, explain)
   #plt.scatter(model, explain)
   #plt.show()
-  return abs(c[0, 1])
+  return -c[0, 1]

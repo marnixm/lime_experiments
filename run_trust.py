@@ -115,10 +115,10 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
       acc = pickle.load(open(path + "Datasets/" + dataset + '_accuracy.p', "rb"))
       f1 = pd.DataFrame(f1, columns=explainNames, index=algNames).transpose()
       acc = pd.DataFrame(acc, columns=explainNames, index=algNames).transpose()
-      f2 = f1 * acc * 100
+      f1adj = f1 * acc * 100
 
-      print('\nDataset:', dataset, '- F2', )
-      print(f2.round(1))
+      print('\nDataset:', dataset, '- f1 adjusted', )
+      print(f1adj.round(1))
   return
 
 #run_5_3(save=True)
