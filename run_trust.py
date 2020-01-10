@@ -7,7 +7,7 @@ from utilities import printLog
 import os
 import matplotlib.pyplot as plt
 
-DATASETS = [('multi_polarity_books','Books')] #('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
+DATASETS = [('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')] #('multi_polarity_books','Books')
 ALGORITHMS = [('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')] #, ('greedy','Greedy'), ('random','Random')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
@@ -16,7 +16,7 @@ path = os.path.abspath(os.curdir) + '/Results_5.3/'
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
               'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000,
               'shap': {'nsamples': 15000, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
-              'rf': {'n_estimators': 100}, #n_est: 1000
+              'rf': {'n_estimators': 1000}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
               'max_examples': None, #None
