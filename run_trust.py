@@ -7,7 +7,7 @@ from utilities import printLog
 import os
 import matplotlib.pyplot as plt
 
-DATASETS = [('multi_polarity_books','Books')] #('multi_polarity_kitchen','Kitchen')] #('multi_polarity_dvd','DVDs'),
+DATASETS = [('multi_polarity_kitchen','Kitchen')] #('multi_polarity_kitchen','Kitchen')] #('multi_polarity_dvd','DVDs'),('multi_polarity_books','Books')
 ALGORITHMS = [('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')] #, ('greedy','Greedy'), ('random','Random')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
@@ -120,5 +120,5 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
       print(f1adj.round(1))
   return
 
-run_5_3(save=True)
-#table_5_3(stats=['precision', 'recall','accuracy'], save=True, f2=True)
+#run_5_3(save=True)
+table_5_3(stats=['precision', 'recall','accuracy'], save=True, f2=True)
