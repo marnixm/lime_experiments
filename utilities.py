@@ -15,7 +15,7 @@ def faithfulness(explanation, skmodel, instance):
   explanability metric: faithfulness
   """
   if len(explanation)<=2:
-    #todo what to do with too small explanation?
+    #Faithfulness not defined
     return np.nan
   model = []
   explain = []
@@ -28,13 +28,13 @@ def faithfulness(explanation, skmodel, instance):
     explain.append(value)
 
   if len(set(explain))<=1 or len(set(model))<=1:
-    # todo correlation between list and point does not exist
-    # explanation and model have no intersection
-    # inter = set([x[0] for x in explanation]).intersection(set(instance.nonzero()[1]))
-    # print(inter)
+    # Correlation between list and point does not exist
+    """explanation and model have no intersection
+    inter = set([x[0] for x in explanation]).intersection(set(instance.nonzero()[1]))
+    print(inter)"""
     return np.nan
 
   c = np.corrcoef(model, explain)
-  #plt.scatter(model, explain)
-  #plt.show()
+  """plt.scatter(model, explain)
+  plt.show()"""
   return -c[0, 1]

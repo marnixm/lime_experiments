@@ -1,4 +1,4 @@
-import evaluate_explanations_func
+import evaluate_explanations_function
 import numpy as np
 import pickle
 import matplotlib
@@ -28,7 +28,7 @@ def run_5_2(save=True):
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
       for e, exp in enumerate(EXPLAINER):
-        temp = evaluate_explanations_func.main(dat, alg, exp, PARAMS_5_2)
+        temp = evaluate_explanations_function.main(dat, alg, exp, PARAMS_5_2)
         results[d][a][e] = temp['score']
         faith[d][a][e] = np.nanmean(temp['faithfulness']) #todo box instead of mean
         totalTime += temp['calcTime']

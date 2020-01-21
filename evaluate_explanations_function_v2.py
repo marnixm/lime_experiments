@@ -11,8 +11,10 @@ from load_datasets import *
 from sklearn.metrics import accuracy_score
 #added
 import datetime
-from utilities import printLog
+from utilities import *
 import shap
+from scipy import *
+from scipy.sparse import *
 
 def get_tree_explanation(tree, v):
     t = tree.tree_
@@ -32,31 +34,33 @@ def get_tree_explanation(tree, v):
             current = right_child
     return exp
 class ExplanationEvaluator:
-  def __init__(self, classifier_names=None):
+  def __init__(self, classifier_names=None, logregMaxIter=1000):
     self.classifier_names = classifier_names
     if not self.classifier_names:
       self.classifier_names = ['l1logreg', 'tree']
     self.classifiers = {}
+    self.max_iter = logregMaxIter
   def init_classifiers(self, dataset):
     self.classifiers[dataset] = {}
     for classifier in self.classifier_names:
       if classifier == 'l1logreg':
-        print('max iterations logreg', 1000)
+        print('max iterations logreg', self.max_iter)
         try_cs = np.arange(.1,0,-.01)
+        #todo what should we do here???
         for c in try_cs:
           self.classifiers[dataset]['l1logreg'] = linear_model.LogisticRegression(penalty='l1', fit_intercept=True, C=c,
-                                                                                  solver='saga', max_iter=1000)
+                                                                                  solver='saga', max_iter=self.max_iter)
           self.classifiers[dataset]['l1logreg'].fit(self.train_vectors[dataset], self.train_labels[dataset])
 
           #maximum number of features logreg uses for any instance is 10
           coef = self.classifiers[dataset]['l1logreg'].coef_[0]
           coefNonZero = coef.nonzero()[0]
           nonzero = np.split(self.train_vectors[dataset].indices, self.train_vectors[dataset].indptr[1:-1])
-          l = [len(np.intersect1d(row, coefNonZero)) for row in nonzero]
+          lengths = [len(np.intersect1d(row, coefNonZero)) for row in nonzero]
 
-          if np.max(l) <= 10:
-            print('Logreg for ', dataset, ' has mean length',  np.mean(l), 'with C=', c)
-            print('And max length = ', np.max(l))
+          if np.max(lengths) <= 10:
+            print('Logreg for ', dataset, ' has mean length',  np.mean(lengths), 'with C=', c)
+            print('And max length = ', np.max(lengths), ', min length = ', np.min(lengths))
             break
       if classifier == 'tree':
         self.classifiers[dataset]['tree'] = tree.DecisionTreeClassifier(random_state=1)
@@ -97,13 +101,16 @@ class ExplanationEvaluator:
     budget = 10
     train_results = {}
     test_results = {}
+    faith = {}
     for d in self.train_data:
       train_results[d] = {}
       test_results[d] = {}
+      faith[d] = {}
       print('Dataset:', d)
       for c in self.classifiers[d]:
         train_results[d][c] = []
         test_results[d][c] = []
+        faith[d][c] = []
         if c == 'l1logreg':
           c_features = self.classifiers[d][c].coef_.nonzero()[1]
         print('classifier:', c) 
@@ -115,68 +122,67 @@ class ExplanationEvaluator:
           if len(true_features) == 0:
             continue
           to_get = budget
-          exp_features = set([x[0] for x in explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)])
+          exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], to_get, d)
+          exp_features = set([x[0] for x in exp])
           test_results[d][c].append(float(len(true_features.intersection(exp_features))) / len(true_features))
+          faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           if max_examples and i >= max_examples:
             break
-    return train_results, test_results
+    return train_results, test_results, faith
 
-def main():
-  parser = argparse.ArgumentParser(description='Evaluate some explanations')
-  parser.add_argument('--dataset', '-d', type=str, required=True,help='dataset name')
-  parser.add_argument('--algorithm', '-a', type=str, required=True, help='algorithm_name')
-  parser.add_argument('--explainer', '-e', type=str, required=True, help='explainer name')
-  args = parser.parse_args()
-  dataset = args.dataset
-  algorithm = args.algorithm
-  explain_method = args.explainer
-
+def main(dataset, algorithm, explain_method, parameters):
   #added by Marnix
   startTime = datetime.datetime.now()
-  path = 'C:/Users/marnix.maas/OneDrive - Accenture/Thesis/log_5.2/' + \
+  path = os.path.abspath(os.curdir) + '/log_5.2/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) \
          + ' ' + dataset[-5:] + ' ' + algorithm + ' ' + explain_method +'.txt'
-  printLog(path, vars(args), '\n')
   printLog(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))
 
-  evaluator = ExplanationEvaluator(classifier_names=[algorithm])
+  evaluator = ExplanationEvaluator(classifier_names=[algorithm], logregMaxIter=parameters['max_iter_logreg'])
   evaluator.load_datasets([dataset])
   evaluator.vectorize_and_train()
   explain_fn = None
-  if args.explainer == 'lime':
-    rho = 25
+  if explain_method == 'lime':
+    rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
     kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
-    printLog(path, 'Num samples lime', 100)
-    explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=100, return_mean=False, verbose=False, return_mapped=True)
+    printLog(path, 'Num samples lime', num_samples)
+    explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
+                                                     return_mean=False, verbose=False, return_mapped=True)
     explain_fn = explainer.explain_instance
-  elif args.explainer == 'parzen':
+  elif explain_method == 'parzen':
     sigmas = {'multi_polarity_electronics': {'tree': 0.5, 'l1logreg': 1},
     'multi_polarity_kitchen': {'tree': 0.75, 'l1logreg': 2.0},
     'multi_polarity_dvd': {'tree': 8.0, 'l1logreg': 1},
     'multi_polarity_books': {'tree': 2.0, 'l1logreg': 2.0}}
-
     explainer = parzen_windows.ParzenWindowClassifier()
-    cv_preds = sklearn.cross_validation.cross_val_predict(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset], evaluator.train_labels[dataset])
+    cv_preds = sklearn.model_selection.cross_val_predict(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
+                                                         evaluator.train_labels[dataset], cv=parameters['parzen_num_cv'])
     explainer.fit(evaluator.train_vectors[dataset], cv_preds)
     explainer.sigma = sigmas[dataset][algorithm]
     explain_fn = explainer.explain_instance
-  elif args.explainer == 'greedy':
-    explain_fn = explainers.explain_greedy
-  elif args.explainer == 'random':
-    explainer = explainers.RandomExplainer()
-    explain_fn = explainer.explain_instance
-  elif args.explainer == 'shap':
+  #greedy/random cannot be score by faithfullness measure
+  #elif explain_method == 'greedy':
+  #  explain_fn = explainers.explain_greedy
+  #elif explain_method == 'random':
+  #  explainer = explainers.RandomExplainer()
+  #  explain_fn = explainer.explain_instance
+  elif explain_method == 'shap':
+    K, nsamples, num_features = parameters['shap']['K'], parameters['shap']['nsamples'], parameters['shap']['num_features']
     explainer = explainers.ShapExplainer(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
-                                         nsamples=500, num_features="num_features(10)", K=10)
+                                         nsamples=nsamples, num_features=num_features, K=K)
     explain_fn = explainer.explain_instance
 
-  train_results, test_results = evaluator.measure_explanation_hability(explain_fn, max_example=20)
+  train_results, test_results, faith = evaluator.measure_explanation_hability(explain_fn,
+                                                                       max_examples=parameters['max_examples'])
   #print results
   printLog(path, 'Finish', datetime.datetime.now().strftime('%H.%M.%S'))
   printLog(path, 'Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
   printLog(path, 'Average test: ', np.mean(test_results[dataset][algorithm]))
   out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
-  return [dataset, algorithm, explainer, np.mean(test_results[dataset][algorithm]), round((datetime.datetime.now()-startTime).total_seconds()/60,3)]
+  return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
+          'score':  np.mean(test_results[dataset][algorithm]),
+          'faithfulness': faith[dataset][algorithm],
+          'calcTime': round((datetime.datetime.now()-startTime).total_seconds()/60,3)}
 
 if __name__ == "__main__":
     main()
