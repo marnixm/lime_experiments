@@ -135,7 +135,7 @@ def main(dataset, algorithm, explain_method, parameters):
   path = os.path.abspath(os.curdir) + '/log_5.2/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) \
          + ' ' + dataset[-5:] + ' ' + algorithm + ' ' + explain_method +'.txt'
-  printLog(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))
+  print(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))
 
   evaluator = ExplanationEvaluator(classifier_names=[algorithm], logregMaxIter=parameters['max_iter_logreg'])
   evaluator.load_datasets([dataset])
@@ -144,7 +144,7 @@ def main(dataset, algorithm, explain_method, parameters):
   if explain_method == 'lime':
     rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
     kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
-    printLog(path, 'Num samples lime', num_samples)
+    print(path, 'Num samples lime', num_samples)
     explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
                                                      return_mean=False, verbose=False, return_mapped=True)
     explain_fn = explainer.explain_instance
@@ -174,9 +174,9 @@ def main(dataset, algorithm, explain_method, parameters):
   train_results, test_results, faith = evaluator.measure_explanation_hability(explain_fn,
                                                                        max_examples=parameters['max_examples'])
   #print results
-  printLog(path, 'Finish', datetime.datetime.now().strftime('%H.%M.%S'))
-  printLog(path, 'Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
-  printLog(path, 'Average test: ', np.mean(test_results[dataset][algorithm]))
+  print(path, 'Finish', datetime.datetime.now().strftime('%H.%M.%S'))
+  print(path, 'Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
+  print(path, 'Average test: ', np.mean(test_results[dataset][algorithm]))
   out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
   return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
           'score':  np.mean(test_results[dataset][algorithm]),

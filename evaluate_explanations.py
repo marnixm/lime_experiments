@@ -10,7 +10,7 @@ import sklearn
 from load_datasets import *
 from sklearn.metrics import accuracy_score
 import datetime
-from utilities import printLog
+#from utilities import printLog
 
 def get_tree_explanation(tree, v):
     t = tree.tree_

@@ -1,4 +1,5 @@
 import evaluate_explanations_function
+import evaluate_explanations_function_improved
 import numpy as np
 import pickle
 import matplotlib
@@ -12,14 +13,17 @@ ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
 PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
-              'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 15000, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels?, background data no longer used
+              'lime': {'num_samples': 2000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 2000, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
+experiment = "improved"
 results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
 faith =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
+ndcg =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
 path = os.path.abspath(os.curdir) + '/Results_5.2/'
-resultsfile, calcTimefile, faithfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p'
+resultsfile, calcTimefile, faithfile, ndcgfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p', 'ndcg5.2.p'
+if experiment == "improved": path = path[:-1] + "_improved/"
 
 def run_5_2(save=True):
   if save: open(path + 'parameters.txt', 'w').write(pprint.pformat(PARAMS_5_2)) #write parameters
@@ -28,9 +32,17 @@ def run_5_2(save=True):
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
       for e, exp in enumerate(EXPLAINER):
-        temp = evaluate_explanations_function.main(dat, alg, exp, PARAMS_5_2)
+        if experiment=="original":
+          temp = evaluate_explanations_function.main(dat, alg, exp, PARAMS_5_2)
+        elif experiment=="improved":
+          temp = evaluate_explanations_function_improved.main(dat, alg, exp, PARAMS_5_2)
+        else:
+          print("wrong experiment name")
+          return
         results[d][a][e] = temp['score']
         faith[d][a][e] = np.nanmean(temp['faithfulness']) #todo box instead of mean
+        print(temp['ndcg'])
+        ndcg[d][a][e] = np.mean(temp['ndcg'])
         totalTime += temp['calcTime']
         calcTimes[e] += temp['calcTime']
   print('\ntotalTime', totalTime)
@@ -41,14 +53,22 @@ def run_5_2(save=True):
     pickle.dump(results, open(path + resultsfile, "wb"))
     pickle.dump(calcTimes, open(path + calcTimefile, "wb"))
     pickle.dump(faith, open(path + faithfile, "wb"))
+    pickle.dump(ndcg, open(path + ndcgfile, "wb"))
   return
 
 def plot_5_2(file, save=False, show=True):
   x = np.arange(len(EXPLAINER))
   width = 0.35
   results = pickle.load(open(path + file, "rb"))
-  measure = ('faithfulness' if file.find('faith')!=-1 else 'recall')
-
+  if file.find('faith')!=-1:
+    measure = 'faithfulness'
+  elif file.find('result')!= -1:
+    measure = 'recall'
+  elif file.find('ndcg')!=-1:
+    measure = 'ndcg'
+  else:
+    print('wrong file')
+    return
   ncol = results.shape[0]
   nrow = results.shape[1]
   nexp = results.shape[2]
@@ -94,4 +114,4 @@ def plot_5_2(file, save=False, show=True):
 run_5_2(save=True)
 plot_5_2(file=resultsfile, save=True, show=True)
 plot_5_2(file=faithfile, save=True, show=True)
-
+plot_5_2(file=ndcgfile, save=True, show=True)
