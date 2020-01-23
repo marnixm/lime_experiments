@@ -11,7 +11,7 @@ from load_datasets import *
 from sklearn.metrics import *
 #added
 import datetime
-from utilities import *
+from explanability_metric import *
 import shap
 from scipy import *
 from scipy.sparse import *
@@ -130,31 +130,31 @@ class ExplanationEvaluator:
         c_features = [f for _, f in sorted(zip(c_importance,c_features), key=lambda z: abs(z[0]), reverse=True)]
         print('classifier:', c)
         for i in range(len(self.test_data[d])):
-          if c == 'l1logreg': tf = self.test_vectors[d][i].nonzero()[1]
-          if c == 'tree':  tf = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i])
+          if c == 'l1logreg': df = self.test_vectors[d][i].nonzero()[1]
+          if c == 'tree':  df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i])
           ###order by feature importance
-          true_features = [f for _, f in sorted(zip(c_features, tf), key=lambda z: z[0], reverse=True)]
+          true_features = [f for _, f in sorted(zip(c_features, df), key=lambda z: z[0], reverse=True)]
+          #print(len(df), len(true_features))
           if len(true_features) == 0:
             continue
-          if len(tf) > 2 and not np.array_equal(tf,true_features) and c =='tree': #todo test
-            print(tf, true_features)
+          """if len(df) > 2 and not np.array_equal(df,true_features) and c =='tree':
+            print(df, true_features)"""
 
           exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], budget, d)
-          exp_features = set([x[0] for x in exp])
-          test_results[d][c].append(float(len(set(true_features).intersection(exp_features))) / len(true_features))
+          exp_features = [x[0] for x in exp]
+          true_features = true_features[:budget] #cut-off at budget=10
+          exp_features = exp_features[:len(true_features)] #cut-off at |tf|<=10
+          #Recall
+          test_results[d][c].append(float(len(np.intersect1d(true_features, exp_features)) / len(true_features)))
           #Faithfulness
           faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           #NDCG
-          minLength = min(len(true_features), len(exp_features))
+          """minLength = min(len(true_features), len(exp_features))
           true_features = list(true_features)[:minLength]
-          exp_features = list(exp_features)[:minLength]
-          if len(true_features)>1:
-            ndcg[d][c].append(sklearn.metrics.ndcg_score([true_features], [exp_features]))
-          else: #length of 1, thus binary score
-            ndcg[d][c].append(int(true_features == exp_features))
-          if ndcg[d][c][-1]<0: #todo test
-            print(ndcg[d][c])
-            a=2
+          exp_features = list(exp_features)[:minLength]"""
+          true_features = true_features[:len(exp_features)] #cut-off at |ef|<=10
+          ndcg[d][c].append(ndcg_score(true_features, exp_features)) #todo move to utilities
+
           if max_examples and i >= max_examples:
             break
     return train_results, test_results, faith, ndcg
@@ -189,10 +189,10 @@ def main(dataset, algorithm, explain_method, parameters):
     explainer.fit(evaluator.train_vectors[dataset], cv_preds)
     explainer.sigma = sigmas[dataset][algorithm]
     explain_fn = explainer.explain_instance
-  #greedy/random cannot be score by faithfullness measure
-  #elif explain_method == 'greedy':
+  # greedy/random cannot be score by faithfullness measure
+  # elif explain_method == 'greedy':
   #  explain_fn = explainers.explain_greedy
-  #elif explain_method == 'random':
+  # elif explain_method == 'random':
   #  explainer = explainers.RandomExplainer()
   #  explain_fn = explainer.explain_instance
   elif explain_method == 'shap':
@@ -208,7 +208,7 @@ def main(dataset, algorithm, explain_method, parameters):
   print('Average test: ', np.mean(test_results[dataset][algorithm]))
   out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
   return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
-          'score':  np.mean(test_results[dataset][algorithm]),
+          'score':  test_results[dataset][algorithm],
           'faithfulness': faith[dataset][algorithm],
           'ndcg': ndcg[dataset][algorithm],
           'calcTime': round((datetime.datetime.now()-startTime).total_seconds()/60,3)}

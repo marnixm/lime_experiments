@@ -18,7 +18,7 @@ from load_datasets import *
 import argparse
 import collections
 import datetime
-from utilities import printLog
+from explanability_metric import printLog
 
 def get_classifier(name, vectorizer, parameters):
   if name == 'logreg':

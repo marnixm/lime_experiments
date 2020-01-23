@@ -2,12 +2,8 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
-# def print(path, *args):
-#   text = ' '.join([str(arg) for arg in args])
-#   print(text)
-#   with open(path, 'a') as log:
-#     log.write(text + '\n')
+import sklearn
+from sklearn.metrics import *
 
 def faithfulness(explanation, skmodel, instance):
   """
@@ -37,3 +33,24 @@ def faithfulness(explanation, skmodel, instance):
   """plt.scatter(model, explain)
   plt.show()"""
   return -c[0, 1]
+
+def ndcg_score(true_features, exp_features):
+  """
+  explanability metric: ndcg
+  """
+  if len(true_features) > 1:
+    score = sklearn.metrics.ndcg_score([true_features], [exp_features])
+  else:
+    # length of 1, thus binary score
+    score = int(true_features == exp_features)
+
+  if score < 0:  # todo test
+    print("Warning NDCG negative", "@" * 100)
+    a = 2
+  return score
+
+# def print(path, *args):
+#   text = ' '.join([str(arg) for arg in args])
+#   print(text)
+#   with open(path, 'a') as log:
+#     log.write(text + '\n')

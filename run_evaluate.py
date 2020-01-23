@@ -12,15 +12,16 @@ DATA_NAMES = ['Books','Dvds','Kitchen']
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
-              'lime': {'num_samples': 2000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 2000, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels
+PARAMS_5_2 = {'max_examples': 10, #if None than maximum is used
+              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 200, 'K': 10, 'num_features': 'num_features(10)'},  #nsampels
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5}  #was standard
 experiment = "improved"
-results =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
-faith =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
-ndcg =  np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
+results = [[[ [] for i in range(len(DATASETS))] for j in range(len(ALGORITHM))] for k in range(len(EXPLAINER))]
+faith = [[[ [] for i in range(len(DATASETS))] for j in range(len(ALGORITHM))] for k in range(len(EXPLAINER))]
+ndcg = [[[ [] for i in range(len(DATASETS))] for j in range(len(ALGORITHM))] for k in range(len(EXPLAINER))]
+# np.zeros((len(DATASETS), len(ALGORITHM), len(EXPLAINER)))
 path = os.path.abspath(os.curdir) + '/Results_5.2/'
 resultsfile, calcTimefile, faithfile, ndcgfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p', 'ndcg5.2.p'
 if experiment == "improved": path = path[:-1] + "_improved/"
@@ -40,9 +41,10 @@ def run_5_2(save=True):
           print("wrong experiment name")
           return
         results[d][a][e] = temp['score']
-        faith[d][a][e] = np.nanmean(temp['faithfulness']) #todo box instead of mean
-        print(temp['ndcg'])
-        ndcg[d][a][e] = np.mean(temp['ndcg'])
+        #print(dat,alg,exp,"\n",results[d][a][e])
+        faith[d][a][e] = temp['faithfulness'] #todo box instead of mean
+        #print(temp['ndcg'])
+        ndcg[d][a][e] = temp['ndcg']
         totalTime += temp['calcTime']
         calcTimes[e] += temp['calcTime']
   print('\ntotalTime', totalTime)
@@ -56,10 +58,11 @@ def run_5_2(save=True):
     pickle.dump(ndcg, open(path + ndcgfile, "wb"))
   return
 
-def plot_5_2(file, save=False, show=True):
+def plot_5_2(file, save=False, show=True, plot='bar'):
   x = np.arange(len(EXPLAINER))
   width = 0.35
-  results = pickle.load(open(path + file, "rb"))
+  results = np.array(pickle.load(open(path + file, "rb")))
+  neg=False
   if file.find('faith')!=-1:
     measure = 'faithfulness'
   elif file.find('result')!= -1:
@@ -81,37 +84,44 @@ def plot_5_2(file, save=False, show=True):
 
       # set x and y labels
       if d==0: ax.set_ylabel(alg, fontsize=15)
-        #todo add small label: recall% or faith%
-        #plt.rc('text', usetex=True)
-        #ax.set_ylabel(r'{\fontsize{30pt}{3em}\selectfont{}{'+alg+'\r}{\fontsize{18pt}{3em}\selectfont{}'+measure+' %}')
       if a==1: ax.set_xlabel(dat, fontsize=15)
 
       for e, exp in enumerate(EXPLAINER):
-        score = results[d][a][e]*100
-        ax.bar(x[e], score, width)
+        if plot=='bar':
+          score = np.nanmean(results[d][a][e])*100
+          if score<0: neg = True
+          ax.bar(x[e], score, width)
+        if plot=='box':
+          s = [s*100 for s in results[d][a][e] if not np.isnan(s)]
+          if np.any(np.array(s)<0): neg=True
+          ax.boxplot(s, positions=[x[e]])
 
       #set axis
-      ax.set_ylim([-105 if np.any(results<0) else 0, 105])
+      ax.set_ylim([-105 if neg else 0, 105])
       ax.set_xticks(x)
       ax.set_xticklabels(EXPLAINER)
       ax.set_yticklabels([])
 
       #set data labels
-      for a, y in zip(x, results[d][a]):
-        y=round(y*100,1)
-        ax.annotate("{:.1f}".format(y),  # this is the text
-                     (a, y),  # this is the point to label
-                     textcoords="offset points",  # how to position the text
-                     xytext=(0, 2),  # distance from text to points (x,y)
-                     ha='center')  # horizontal alignment can be left, right or center
+      if plot == 'bar':
+        for a, y in zip(x, results[d][a]):
+          y=round(y*100,1)
+          ax.annotate("{:.1f}".format(y),  # this is the text
+                       (a, y),  # this is the point to label
+                       textcoords="offset points",  # how to position the text
+                       xytext=(0, 2),  # distance from text to points (x,y)
+                       ha='center')  # horizontal alignment can be left, right or center
 
   plt.tight_layout()
-  if save: plt.savefig(path+measure+' 52'+'.png') #.svg
+  if save: plt.savefig(path+measure+' 52'+ (' box' if plot=='box' else '') +'.png') #.svg
   if show: plt.show(block=True)
   plt.close()
   return
 
-run_5_2(save=True)
-plot_5_2(file=resultsfile, save=True, show=True)
-plot_5_2(file=faithfile, save=True, show=True)
-plot_5_2(file=ndcgfile, save=True, show=True)
+#run_5_2(save=True)
+save=True
+show=True
+plot='box'
+plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
+plot_5_2(file=faithfile, save=save, show=show, plot=plot)
+plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)
