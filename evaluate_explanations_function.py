@@ -130,7 +130,6 @@ class ExplanationEvaluator:
     return train_results, test_results, faith
 
 def main(dataset, algorithm, explain_method, parameters):
-  #added by Marnix
   startTime = datetime.datetime.now()
   path = os.path.abspath(os.curdir) + '/log_5.2/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) \

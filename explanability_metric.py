@@ -8,6 +8,7 @@ from sklearn.metrics import *
 def faithfulness(explanation, skmodel, instance):
   """
   explanability metric: faithfulness
+  Onliner. Measure if feature attribution has same effect as model when feature is perturbed
   """
   if len(explanation)<=2:
     #Faithfulness not defined
@@ -37,6 +38,7 @@ def faithfulness(explanation, skmodel, instance):
 def ndcg_score(true_features, exp_features):
   """
   explanability metric: ndcg
+  Onliner. Compares ranking of features in model to explainer ranking, ranked by feature importance/attribution
   """
   if len(true_features) > 1:
     score = sklearn.metrics.ndcg_score([true_features], [exp_features])

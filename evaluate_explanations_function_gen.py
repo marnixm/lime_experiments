@@ -13,6 +13,7 @@ from sklearn.metrics import *
 import datetime
 from explanability_metric import *
 import shap
+import lime
 from scipy import *
 from scipy.sparse import *
 
@@ -53,14 +54,15 @@ class ExplanationEvaluator:
           self.classifiers[dataset]['l1logreg'].fit(self.train_vectors[dataset], self.train_labels[dataset])
 
           #maximum number of features logreg uses for any instance is K=10
-          coef = self.classifiers[dataset]['l1logreg'].coef_[0]
-          coefNonZero = coef.nonzero()[0]
-          nonzero = np.split(self.train_vectors[dataset].indices, self.train_vectors[dataset].indptr[1:-1])
-          lengths = [len(np.intersect1d(row, coefNonZero)) for row in nonzero]
+          # coef = self.classifiers[dataset]['l1logreg'].coef_[0]
+          # # coefNonZero = coef.nonzero()[0]
+          # # nonzero = np.split(self.train_vectors[dataset].indices, self.train_vectors[dataset].indptr[1:-1])
+          # lengths = [len(coefNonZero) for row in nonzero]
+          length = self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0]
 
-          if np.average(lengths) <= 10:
-            print('Logreg for ', dataset, ' has mean length',  np.mean(lengths), 'with C=', c)
-            print('And max length = ', np.max(lengths), ', min length = ', np.min(lengths))
+          if np.average(length) <= 10:
+            print('Logreg for ', dataset, ' has length',  np.mean(length), 'with C=', c)
+            #print('And max length = ', np.max(lengths), ', min length = ', np.min(lengths))
             break
       if classifier == 'tree':
         self.classifiers[dataset]['tree'] = tree.DecisionTreeClassifier(random_state=1)
@@ -70,13 +72,13 @@ class ExplanationEvaluator:
         lengths = [len(np.intersect1d(f, set(self.train_vectors[dataset][i].nonzero()[1]))) for i in range (self.train_vectors[dataset].shape[0])]
         """ #todo^^
         print('Tree for ', dataset, ' has mean length',  np.mean(lengths))
-  def load_datasets(self, dataset_names):
+  def load_datasets(self, dataset_names, parameters):
     self.train_data = {}
     self.train_labels = {}
     self.test_data = {}
     self.test_labels = {}
     for dataset in dataset_names:
-      self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], self.test_labels[dataset], _ = LoadDataset(dataset, None)
+      self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], self.test_labels[dataset], _ = LoadDataset(dataset, parameters)
   def vectorize_and_train(self, dataset_names):
     self.vectorizer = {}
     self.train_vectors = {}
@@ -84,12 +86,16 @@ class ExplanationEvaluator:
     self.inverse_vocabulary = {}
     # print('Vectorizing...')
     for d in self.train_data:
-      self.vectorizer[d] = CountVectorizer(lowercase=False, binary=True)
-      self.train_vectors[d] = self.vectorizer[d].fit_transform(self.train_data[d])
-      self.test_vectors[d] = self.vectorizer[d].transform(self.test_data[d])
-      terms = np.array(list(self.vectorizer[d].vocabulary_.keys()))
-      indices = np.array(list(self.vectorizer[d].vocabulary_.values()))
-      self.inverse_vocabulary[d] = terms[np.argsort(indices)]
+      if list(self.train_data.keys())[0]=='Generated':
+        self.train_vectors[d] = self.train_data[d]
+        self.test_vectors[d] = self.test_data[d]
+      else:
+        self.vectorizer[d] = CountVectorizer(lowercase=False, binary=True)
+        self.train_vectors[d] = self.vectorizer[d].fit_transform(self.train_data[d])
+        self.test_vectors[d] = self.vectorizer[d].transform(self.test_data[d])
+        terms = np.array(list(self.vectorizer[d].vocabulary_.keys()))
+        indices = np.array(list(self.vectorizer[d].vocabulary_.values()))
+        self.inverse_vocabulary[d] = terms[np.argsort(indices)]
     # print('Done')
     # print('Training...')
     for d in self.train_data:
@@ -129,8 +135,9 @@ class ExplanationEvaluator:
         c_features = [f for _, f in sorted(zip(c_importance,c_features), key=lambda z: abs(z[0]), reverse=True)]
         print('classifier:', c)
         for i in range(len(self.test_data[d])):
-          if c == 'l1logreg': df = self.test_vectors[d][i].nonzero()[1]
-          if c == 'tree':  df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i])
+          if d == "Generated":  df = list(range(len(self.test_vectors[d][i]))) #all features exist for generated data
+          elif c == 'l1logreg': df = self.test_vectors[d][i].nonzero()[1]
+          elif c == 'tree':     df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i])
           ###order by feature importance
           true_features = [f for _, f in sorted(zip(c_features, df), key=lambda z: z[0], reverse=True)]
           if len(true_features) == 0:
@@ -147,7 +154,7 @@ class ExplanationEvaluator:
           test_results[d][c].append(float(len(np.intersect1d(true_features, exp_features))
                                           / len(true_features)))
           #Faithfulness
-          faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
+          # faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           #NDCG
           # if len(exp_features) < len(true_features): #todo test
           #   print('true',true_features)
@@ -168,15 +175,17 @@ def main(dataset, algorithm, explain_method, parameters):
   print('Start', datetime.datetime.now().strftime('%H.%M.%S'))
 
   evaluator = ExplanationEvaluator(classifier_names=[algorithm], logregMaxIter=parameters['max_iter_logreg'])
-  evaluator.load_datasets([dataset])
+  evaluator.load_datasets([dataset], parameters)
   evaluator.vectorize_and_train([dataset])
   explain_fn = None
   if explain_method == 'lime':
     rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
-    kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
-    #print('Num samples lime', num_samples)
-    explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
-                                                     return_mean=False, verbose=False, return_mapped=True)
+    if dataset=="Generated":
+      explainer = explainers.LimeTabExplainer(evaluator.train_vectors[dataset], nsamples=num_samples, K=parameters['max_examples'])
+    else:
+      kernel = lambda d: np.sqrt(np.exp(-(d ** 2) / rho ** 2))
+      explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
+                                                       return_mean=False, verbose=False, return_mapped=True)
     explain_fn = explainer.explain_instance
   elif explain_method == 'parzen':
     sigmas = {'multi_polarity_electronics': {'tree': 0.5, 'l1logreg': 1},
@@ -196,9 +205,10 @@ def main(dataset, algorithm, explain_method, parameters):
   #  explainer = explainers.RandomExplainer()
   #  explain_fn = explainer.explain_instance
   elif explain_method == 'shap':
-    n_clusters, nsamples, num_features = parameters['shap']['n_clusters'], parameters['shap']['nsamples'], parameters['shap']['num_features']
+    nsamples, num_features, n_clusters = parameters['shap']['nsamples'], parameters['shap']['num_features'], parameters['shap']['n_clusters']
     explainer = explainers.ShapExplainer(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
-                                         nsamples=nsamples, num_features=num_features, num_clusters=n_clusters)
+                                         nsamples=nsamples, num_features=num_features,
+                                         num_clusters=(n_clusters if dataset=="Generated" else None))
     explain_fn = explainer.explain_instance
 
   train_results, test_results, faith, ndcg = evaluator.measure_explanation_hability(explain_fn, max_examples=parameters['max_examples'])
