@@ -13,16 +13,17 @@ DATA_NAMES = ['Generated','Books','Dvds','Kitchen']
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': 10, #if None than maximum is used
+PARAMS_5_2 = {'max_examples': 100, #if None than maximum is used
               'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
               'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},  #nsampels
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen': {'n_inf': 10, 'n_features': 30, 'seed': 1, 'nrows': 1000, 'noise': 0.01}}
 experiment = "improved"
-results = [[[ [] for i in range(len(DATASETS))] for j in range(len(ALGORITHM))] for k in range(len(EXPLAINER))]
-faith = [[[ [] for i in range(len(DATASETS))] for j in range(len(ALGORITHM))] for k in range(len(EXPLAINER))]
-ndcg = [[[ [] for i in range(len(DATASETS))] for j in range(len(ALGORITHM))] for k in range(len(EXPLAINER))]
+init_list = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
+results = init_list.copy()
+faith = init_list.copy()
+ndcg = init_list.copy()
 path = os.path.abspath(os.curdir) + '/Results_5.2/'
 resultsfile, calcTimefile, faithfile, ndcgfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p', 'ndcg5.2.p'
 if experiment == "improved": path = path[:-1] + "_improved/"
@@ -34,8 +35,6 @@ def run_5_2(save=True):
   for d, dat in enumerate(DATASETS):
     for a, alg in enumerate(ALGORITHM):
       for e, exp in enumerate(EXPLAINER):
-        # if dat == "Generated":
-        #   temp = evaluate_explanations_function_gen.main(dat, alg, exp, PARAMS_5_2)  # is improved version
         if experiment=="original":
           temp = evaluate_explanations_function.main(dat, alg, exp, PARAMS_5_2)
         elif experiment=="improved":
@@ -120,7 +119,7 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   plt.close()
   return
 
-run_5_2(save=False)
+run_5_2(save=True)
 save=False
 show=True
 plot='bar'

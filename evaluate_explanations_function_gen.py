@@ -17,10 +17,10 @@ import lime
 from scipy import *
 from scipy.sparse import *
 
-def get_tree_explanation(tree, v):
+def get_tree_explanation(tree, v, dataset):
   """ retrieves features used by the tree model iff they appear in instance v """
   t = tree.tree_
-  nonzero = v.nonzero()[1]
+  nonzero = v.nonzero()[1 if not dataset=="Generated" else 0]
   current = 0
   left_child = t.children_left[current]
   exp = []
@@ -30,10 +30,10 @@ def get_tree_explanation(tree, v):
       f = t.feature[current]
       if f in nonzero:
           exp.append(f)
-      if v[0,f] < t.threshold[current]:
-          current = left_child
+      if (v[f] if dataset=="Generated" else v[0,f]) < t.threshold[current]:
+        current = left_child
       else:
-          current = right_child
+        current = right_child
   return exp
 class ExplanationEvaluator:
   def __init__(self, classifier_names=None, logregMaxIter=1000):
@@ -58,7 +58,7 @@ class ExplanationEvaluator:
           # # coefNonZero = coef.nonzero()[0]
           # # nonzero = np.split(self.train_vectors[dataset].indices, self.train_vectors[dataset].indptr[1:-1])
           # lengths = [len(coefNonZero) for row in nonzero]
-          length = self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0]
+          length = len(self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0])
 
           if np.average(length) <= 10:
             print('Logreg for ', dataset, ' has length',  np.mean(length), 'with C=', c)
@@ -67,7 +67,7 @@ class ExplanationEvaluator:
       if classifier == 'tree':
         self.classifiers[dataset]['tree'] = tree.DecisionTreeClassifier(random_state=1)
         self.classifiers[dataset]['tree'].fit(self.train_vectors[dataset], self.train_labels[dataset])
-        lengths = [len(get_tree_explanation(self.classifiers[dataset]['tree'], self.train_vectors[dataset][i])) for i in range(self.train_vectors[dataset].shape[0])]
+        lengths = [len(get_tree_explanation(self.classifiers[dataset]['tree'], self.train_vectors[dataset][i], dataset)) for i in range(self.train_vectors[dataset].shape[0])]
         """f = set(self.classifiers[dataset]['tree'].tree_.feature) #features of model
         lengths = [len(np.intersect1d(f, set(self.train_vectors[dataset][i].nonzero()[1]))) for i in range (self.train_vectors[dataset].shape[0])]
         """ #todo^^
@@ -137,7 +137,7 @@ class ExplanationEvaluator:
         for i in range(len(self.test_data[d])):
           if d == "Generated":  df = list(range(len(self.test_vectors[d][i]))) #all features exist for generated data
           elif c == 'l1logreg': df = self.test_vectors[d][i].nonzero()[1]
-          elif c == 'tree':     df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i])
+          elif c == 'tree':     df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i], d)
           ###order by feature importance
           true_features = [f for _, f in sorted(zip(c_features, df), key=lambda z: z[0], reverse=True)]
           if len(true_features) == 0:
@@ -191,11 +191,12 @@ def main(dataset, algorithm, explain_method, parameters):
     sigmas = {'multi_polarity_electronics': {'tree': 0.5, 'l1logreg': 1},
     'multi_polarity_kitchen': {'tree': 0.75, 'l1logreg': 2.0},
     'multi_polarity_dvd': {'tree': 8.0, 'l1logreg': 1},
-    'multi_polarity_books': {'tree': 2.0, 'l1logreg': 2.0}}
+    'multi_polarity_books': {'tree': 2.0, 'l1logreg': 2.0},
+    'Generated': {'tree': 2.0, 'l1logreg': 2.0}} #todo optimize?
     explainer = parzen_windows.ParzenWindowClassifier()
     cv_preds = sklearn.model_selection.cross_val_predict(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
                                                          evaluator.train_labels[dataset], cv=parameters['parzen_num_cv'])
-    explainer.fit(evaluator.train_vectors[dataset], cv_preds)
+    explainer.fit(evaluator.train_vectors[dataset], cv_preds, dataset)
     explainer.sigma = sigmas[dataset][algorithm]
     explain_fn = explainer.explain_instance
   # greedy/random cannot be score by faithfullness measure

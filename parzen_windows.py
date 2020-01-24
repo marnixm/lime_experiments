@@ -25,8 +25,8 @@ class ParzenWindowClassifier:
     def __init__(self):
         #self.kernel = lambda x, sigma : np.exp(-.5 * x.dot(x.T)[0,0] / sigma ** 2) / (np.sqrt(2 * np.pi * sigma **2))
         self.kernel = lambda x, sigma: np.array(np.exp(-.5 * x.power(2).sum(axis=1) / sigma ** 2) / (np.sqrt(2 * np.pi * sigma **2))).flatten()
-    def fit(self, X, y):
-        self.X = X.toarray()
+    def fit(self, X, y, dataset):
+        self.X = X.toarray() if not dataset=="Generated" else X
         self.y = y
         self.ones = y==1
         self.zeros = y==0
@@ -60,11 +60,9 @@ class ParzenWindowClassifier:
                 best_sigma = sigma
         print('Best sigma achieves ', best_mistakes, 'mistakes. Disagreement=', float(best_mistakes) / cv_X.shape[0])
         self.sigma = best_sigma
-    def explain_instance(self, x, _, __,num_features, ___=None):
-        #print(self.X.shape)
-        #a = x.toarray()[0]
-        #print(s.shape)
-        minus = self.X - x.toarray()[0]
+    def explain_instance(self, x, _, __,num_features, dataset):
+        if not dataset=="Generated": x = x.toarray()[0]
+        minus = self.X - x
         b = sp.sparse.csr_matrix(minus)
         ker = self.kernel(b, self.sigma)
         #ker = np.array([self.kernel(z, self.sigma) for z in b])
@@ -75,8 +73,9 @@ class ParzenWindowClassifier:
         sumt_1 = sum(times[self.ones])
         sumk_total = sumk_0 + sumk_1
         exp = (sumk_0 * sumt_1 - sumk_1 * sumt_0) / (self.sigma **2 * sumk_total ** 2)
-        features = x.nonzero()[1]
-        values = exp[x.nonzero()[1]]
+        xNonzero = x.nonzero()[0] #1 if not dataset=="Generated" else
+        features = xNonzero
+        values = exp[xNonzero]
         return sorted(zip(features, values), key=lambda x:np.abs(x[1]), reverse=True)[:num_features]
 def main():
   parser = argparse.ArgumentParser(description='Visualize some stuff')
