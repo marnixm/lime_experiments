@@ -1,6 +1,6 @@
 import scipy as sp
 import shap
-import lime
+#import lime
 import numpy as np
 import sklearn.metrics.pairwise
 from scipy import *

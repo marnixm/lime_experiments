@@ -44,7 +44,7 @@ class ExplanationEvaluator:
     self.classifiers[dataset] = {}
     for classifier in self.classifier_names:
       if classifier == 'l1logreg':
-        print('max iterations logreg', self.max_iter)
+        #print('max iterations logreg', self.max_iter)
         try_cs = np.arange(.1,0,-.01)
         for c in try_cs:
           self.classifiers[dataset]['l1logreg'] = linear_model.LogisticRegression(penalty='l1', fit_intercept=True, C=c,
@@ -72,13 +72,13 @@ class ExplanationEvaluator:
     self.test_data = {}
     self.test_labels = {}
     for dataset in dataset_names:
-      self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], self.test_labels[dataset], _ = LoadDataset(dataset)
+      self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], self.test_labels[dataset], _ = LoadDataset(dataset, None)
   def vectorize_and_train(self):
     self.vectorizer = {}
     self.train_vectors = {}
     self.test_vectors = {}
     self.inverse_vocabulary = {}
-    print('Vectorizing...')
+    #print('Vectorizing...')
     for d in self.train_data:
       self.vectorizer[d] = CountVectorizer(lowercase=False, binary=True)
       self.train_vectors[d] = self.vectorizer[d].fit_transform(self.train_data[d])
@@ -86,13 +86,13 @@ class ExplanationEvaluator:
       terms = np.array(list(self.vectorizer[d].vocabulary_.keys()))
       indices = np.array(list(self.vectorizer[d].vocabulary_.values()))
       self.inverse_vocabulary[d] = terms[np.argsort(indices)]
-    print('Done')
-    print('Training...')
+    #print('Done')
+    #print('Training...')
     for d in self.train_data:
       print(d)
       self.init_classifiers(d)
-    print('Done')
-    print()
+    #print('Done')
+    #print()
   def measure_explanation_hability(self, explain_fn, max_examples=None):
     """Asks for explanations for all predictions in the train and test set, with
     budget = size of explanation. Returns two maps (train_results,
@@ -134,7 +134,7 @@ def main(dataset, algorithm, explain_method, parameters):
   path = os.path.abspath(os.curdir) + '/log_5.2/' + \
          str(startTime.strftime('%y%m%d %H.%M.%S')) \
          + ' ' + dataset[-5:] + ' ' + algorithm + ' ' + explain_method +'.txt'
-  print(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))
+  #print(path, 'Start', datetime.datetime.now().strftime('%H.%M.%S'))
 
   evaluator = ExplanationEvaluator(classifier_names=[algorithm], logregMaxIter=parameters['max_iter_logreg'])
   evaluator.load_datasets([dataset])
@@ -143,7 +143,7 @@ def main(dataset, algorithm, explain_method, parameters):
   if explain_method == 'lime':
     rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
     kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
-    print(path, 'Num samples lime', num_samples)
+    #print(path, 'Num samples lime', num_samples)
     explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
                                                      return_mean=False, verbose=False, return_mapped=True)
     explain_fn = explainer.explain_instance
@@ -155,7 +155,7 @@ def main(dataset, algorithm, explain_method, parameters):
     explainer = parzen_windows.ParzenWindowClassifier()
     cv_preds = sklearn.model_selection.cross_val_predict(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
                                                          evaluator.train_labels[dataset], cv=parameters['parzen_num_cv'])
-    explainer.fit(evaluator.train_vectors[dataset], cv_preds)
+    explainer.fit(evaluator.train_vectors[dataset], cv_preds, dataset)
     explainer.sigma = sigmas[dataset][algorithm]
     explain_fn = explainer.explain_instance
   #greedy/random cannot be score by faithfullness measure
@@ -165,22 +165,25 @@ def main(dataset, algorithm, explain_method, parameters):
   #  explainer = explainers.RandomExplainer()
   #  explain_fn = explainer.explain_instance
   elif explain_method == 'shap':
-    K, nsamples, num_features = parameters['shap']['K'], parameters['shap']['nsamples'], parameters['shap']['num_features']
+    nsamples, num_features, _ = parameters['shap']['nsamples'], parameters['shap']['num_features'], \
+                                         parameters['shap']['n_clusters']
     explainer = explainers.ShapExplainer(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
-                                         nsamples=nsamples, num_features=num_features, K=K)
+                                         nsamples=nsamples, num_features=num_features,
+                                         num_clusters=None)
     explain_fn = explainer.explain_instance
 
   train_results, test_results, faith = evaluator.measure_explanation_hability(explain_fn,
                                                                        max_examples=parameters['max_examples'])
   #print results
-  print(path, 'Finish', datetime.datetime.now().strftime('%H.%M.%S'))
-  print(path, 'Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
-  print(path, 'Average test: ', np.mean(test_results[dataset][algorithm]))
-  out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
-  return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
-          'score':  np.mean(test_results[dataset][algorithm]),
+  print('Finish', datetime.datetime.now().strftime('%H.%M.%S'))
+  print('Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
+  print('Average test: ', np.mean(test_results[dataset][algorithm]))
+  #out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
+  return {'dataset': dataset, 'alg': algorithm, 'exp': explain_method,
+          'score': test_results[dataset][algorithm],
           'faithfulness': faith[dataset][algorithm],
-          'calcTime': round((datetime.datetime.now()-startTime).total_seconds()/60,3)}
+          #'ndcg': ndcg[dataset][algorithm],
+          'calcTime': round((datetime.datetime.now() - startTime).total_seconds() / 60, 3)}
 
 if __name__ == "__main__":
     main()

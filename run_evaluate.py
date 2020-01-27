@@ -8,22 +8,24 @@ import matplotlib.pyplot as plt
 import pprint
 import os
 
-DATASETS = ['Generated','multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
-DATA_NAMES = ['Generated','Books','Dvds','Kitchen']
+DATASETS = ['multi_polarity_books', 'multi_polarity_dvd'] #, 'multi_polarity_kitchen'] #'Generated',
+DATA_NAMES = ['Books','Dvds'] #,'Kitchen'] #'Generated',
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
-EXPLAINER = ['shap', 'lime', 'parzen']# , 'greedy', 'random']
-PARAMS_5_2 = {'max_examples': 100, #if None than maximum is used
+EXPLAINER = ['shap', 'lime', 'parzen']
+#collection of parameters used by the experiment and explainers
+PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
               'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},  #nsampels
+              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen': {'n_inf': 10, 'n_features': 30, 'seed': 1, 'nrows': 1000, 'noise': 0.01}}
-experiment = "improved"
-init_list = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
-results = init_list.copy()
-faith = init_list.copy()
-ndcg = init_list.copy()
+
+experiment = "improved" \
+             ""
+results = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
+faith = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
+ndcg = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
 path = os.path.abspath(os.curdir) + '/Results_5.2/'
 resultsfile, calcTimefile, faithfile, ndcgfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p', 'ndcg5.2.p'
 if experiment == "improved": path = path[:-1] + "_improved/"
@@ -76,7 +78,7 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   nrow = results.shape[1]
   nexp = results.shape[2]
   bigfig, bigax = plt.subplots(nrow, ncol, sharey=True, figsize=(12,8))
-  bigax[0,1].set_title('Evaluate - '+ measure + ' %', fontsize=20)
+  bigax[0,1].set_title(measure.capitalize() + ' (in %)', fontsize=20)
 
   for d, dat in enumerate(DATA_NAMES):
     for a, alg in enumerate(ALG_NAMES):
@@ -119,10 +121,10 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   plt.close()
   return
 
-run_5_2(save=True)
+#run_5_2(save=True)
 save=False
 show=True
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
 plot_5_2(file=faithfile, save=save, show=show, plot=plot)
-plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)
+#plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)

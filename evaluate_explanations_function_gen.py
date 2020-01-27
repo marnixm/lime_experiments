@@ -217,7 +217,7 @@ def main(dataset, algorithm, explain_method, parameters):
   print('Finish', datetime.datetime.now().strftime('%H.%M.%S'))
   print('Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
   print('Average test: ', np.mean(test_results[dataset][algorithm]))
-  out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
+  #out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
   return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
           'score':  test_results[dataset][algorithm],
           'faithfulness': faith[dataset][algorithm],
