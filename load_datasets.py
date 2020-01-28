@@ -34,21 +34,18 @@ def LoadDataset(dataset_name, parameters):
     name = dataset_name.split('_')[2]
     return LoadMultiDomainDataset(POLARITY_PATH + name)
   if dataset_name.find('generated'):
-    parameters = parameters['Gen']
-    parameters['count'] += 1
-
-
-    data, data_labels = sklearn.datasets.make_classification(n_samples=parameters['nrows'],
-                                                             n_features=parameters['n_features'],
-                                                             n_informative=parameters['n_inf'],
-                                                             n_redundant=0, # random linear combinations of informative features
+    params = parameters['Gen' + str(parameters['Gen_count'])]
+    data, data_labels = sklearn.datasets.make_classification(n_samples=params['nrows'],
+                                                             n_features=params['n_features'],
+                                                             n_informative=params['n_inf'],
+                                                             n_redundant=params['n_redundant'], # random linear combinations of informative features
                                                              n_classes=2,
-                                                             flip_y=parameters['noise'],
-                                                             random_state=parameters['seed'])
-    # informative_columns = list(range(n_inf))
+                                                             flip_y=params['noise'],
+                                                             random_state=params['seed'])
+
     train_data, test_data, train_labels, test_labels = train_test_split(data, data_labels,
                                                                         test_size = 0.2,
-                                                                        random_state = parameters['seed'])
+                                                                        random_state = params['seed'])
     return train_data, np.array(train_labels), test_data, np.array(test_labels), ""
 
 def LoadMultiDomainDataset(path_data, remove_bigrams=True):

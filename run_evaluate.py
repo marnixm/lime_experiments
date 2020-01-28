@@ -8,18 +8,25 @@ import matplotlib.pyplot as plt
 import pprint
 import os
 
-DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen'] #'Generated',
-DATA_NAMES = ['Books','Dvds','Kitchen'] #'Generated',
+DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
+DATA_NAMES = ['Books','Dvds','Kitchen']
+if True: #Generated
+  DATASETS = ['Generated'] * 4
+  DATA_NAMES = ["Generated " + str(i + 1) for i in range(4)]
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']
 #collection of parameters used by the experiment and explainers
-PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
-              'lime': {'num_samples': 1000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 1000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
+              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
-              'Gen': {'count': 0, 'n_inf': 10, 'n_features': 30, 'seed': 1, 'nrows': 1000, 'noise': 0.01}}
+              'Gen_count': 0, #to pick synthetic data parameters
+              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen2': {'n_inf': 10, 'n_redundant': 5, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.20, 'seed': 1, 'nrows': 2000},
+              'Gen4': {'n_inf': 10, 'n_redundant': 5, 'n_features': 30, 'noise': 0.20, 'seed': 1, 'nrows': 2000}}
 
 experiment = "improved"
 results = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
@@ -27,13 +34,17 @@ faith = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] f
 ndcg = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
 path = os.path.abspath(os.curdir) + '/Results_5.2/'
 resultsfile, calcTimefile, faithfile, ndcgfile = 'result5.2.p', 'calcTime5.2.p', 'faith5.2.p', 'ndcg5.2.p'
-if experiment == "improved": path = path[:-1] + "_improved/"
+if experiment == "original": path = path + "original/"
+if experiment == "improved": path = path + "improved/"
+if DATASETS[0] == "Generated": path = path[:-1] + " generated/"
+
 
 def run_5_2(save=True):
   if save: open(path + 'parameters.txt', 'w').write(pprint.pformat(PARAMS_5_2)) #write parameters
   totalTime = 0
   calcTimes = np.zeros(len(EXPLAINER))
   for d, dat in enumerate(DATASETS):
+    PARAMS_5_2['Gen_count'] += 1
     for a, alg in enumerate(ALGORITHM):
       for e, exp in enumerate(EXPLAINER):
         if experiment=="original":
