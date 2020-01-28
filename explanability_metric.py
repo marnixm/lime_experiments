@@ -40,6 +40,12 @@ def ndcg_score(true_features, exp_features):
   Explanability metric: ndcg
   Oneliner. Compares ranking of features in model to explainer ranking, ranked by feature importance/attribution
   """
+  #cut-off the feature vectors at minimum lenght
+  #accounted for by multiplying ndcg with recall
+  minl = min(len(true_features), len(exp_features))
+  true_features = true_features[:minl]
+  exp_features = exp_features[:minl]
+
   if len(true_features) > 1:
     score = sklearn.metrics.ndcg_score([true_features], [exp_features])
   else:

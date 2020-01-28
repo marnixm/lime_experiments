@@ -46,21 +46,13 @@ class ExplanationEvaluator:
     self.classifiers[dataset] = {}
     for classifier in self.classifier_names:
       if classifier == 'l1logreg':
-        #print('max iterations logreg', self.max_iter)
         try_cs = np.arange(.1,0,-.01)
         for c in try_cs:
           self.classifiers[dataset]['l1logreg'] = linear_model.LogisticRegression(penalty='l1', fit_intercept=True, C=c,
                                                                                   solver='saga', max_iter=self.max_iter)
           self.classifiers[dataset]['l1logreg'].fit(self.train_vectors[dataset], self.train_labels[dataset])
-
-          #maximum number of features logreg uses for any instance is K=10
-          # coef = self.classifiers[dataset]['l1logreg'].coef_[0]
-          # # coefNonZero = coef.nonzero()[0]
-          # # nonzero = np.split(self.train_vectors[dataset].indices, self.train_vectors[dataset].indptr[1:-1])
-          # lengths = [len(coefNonZero) for row in nonzero]
           length = len(self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0])
-
-          if np.max(length) <= 10:
+          if np.average(length) <= 10:
             print('Logreg for ', dataset, ' has length',  np.mean(length), 'with C=', c)
             #print('And max length = ', np.max(lengths), ', min length = ', np.min(lengths))
             break
@@ -84,7 +76,6 @@ class ExplanationEvaluator:
     self.train_vectors = {}
     self.test_vectors = {}
     self.inverse_vocabulary = {}
-    # print('Vectorizing...')
     for d in self.train_data:
       if list(self.train_data.keys())[0]=='Generated':
         self.train_vectors[d] = self.train_data[d]
@@ -96,13 +87,9 @@ class ExplanationEvaluator:
         terms = np.array(list(self.vectorizer[d].vocabulary_.keys()))
         indices = np.array(list(self.vectorizer[d].vocabulary_.values()))
         self.inverse_vocabulary[d] = terms[np.argsort(indices)]
-    # print('Done')
-    # print('Training...')
     for d in self.train_data:
       print(d)
       self.init_classifiers(d)
-    # print('Done')
-    # print()
   def measure_explanation_hability(self, explain_fn, max_examples=None):
     """Asks for explanations for all predictions in the train and test set, with
     budget = size of explanation. Returns two maps (train_results,
@@ -142,27 +129,18 @@ class ExplanationEvaluator:
           elif c == 'l1logreg': df = self.test_vectors[d][i].nonzero()[1]
           elif c == 'tree':     df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i], d)
           ###order by feature importance
-          true_features = [f for f in c_features if f in df]
+          true_features = [f for f in c_features if f in df][:budget] #cut-off at 10 features
           if len(true_features) == 0: continue
-
-          # todo check impact of cut-offs
-          true_features = true_features[:budget] #cut-off at budget=10
-          #exp_features = exp_features[:budget] #cut-off at |tf|<=10
           #Recall
-          recall = float(len(np.intersect1d(true_features, exp_features)) / len(true_features))
-          test_results[d][c].append(recall)
+          RECALL = float(len(np.intersect1d(true_features, exp_features)) / len(true_features))
+          test_results[d][c].append(RECALL)
           #Faithfulness
-          #faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
-          #NDCG
-          # if len(exp_features) < len(true_features):
-          #   print('true',true_features)
-          #   print('exp', exp_features)
-          #   a=2
-          minl = min(len(true_features), len(exp_features))
-          true_features = true_features[:minl]  # cut-off at |ef|<=10
-          exp_features = exp_features[:minl]  # cut-off at |tf|<=10
+          if not d=="Generated": #todo remove
+            FAITH = faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i])
+            faith[d][c].append(FAITH)
+          #Ndcg
           NDCG = ndcg_score(true_features, exp_features)
-          ndcg[d][c].append(NDCG*recall)
+          ndcg[d][c].append(NDCG*RECALL) #we use recall to adjust for the cut-off at minimum length
           if max_examples and i >= max_examples:
             break
     return train_results, test_results, faith, ndcg
