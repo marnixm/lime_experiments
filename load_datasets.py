@@ -34,8 +34,10 @@ def LoadDataset(dataset_name, parameters):
     name = dataset_name.split('_')[2]
     return LoadMultiDomainDataset(POLARITY_PATH + name)
   if dataset_name.find('generated'):
-    # todo implement generated data
     parameters = parameters['Gen']
+    parameters['count'] += 1
+
+
     data, data_labels = sklearn.datasets.make_classification(n_samples=parameters['nrows'],
                                                              n_features=parameters['n_features'],
                                                              n_informative=parameters['n_inf'],
