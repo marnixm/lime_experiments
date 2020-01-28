@@ -8,21 +8,20 @@ import matplotlib.pyplot as plt
 import pprint
 import os
 
-DATASETS = ['multi_polarity_books', 'multi_polarity_dvd'] #, 'multi_polarity_kitchen'] #'Generated',
-DATA_NAMES = ['Books','Dvds'] #,'Kitchen'] #'Generated',
+DATASETS = ['Generated','multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen'] #
+DATA_NAMES = ['Generated','Books','Dvds','Kitchen'] #
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']
 #collection of parameters used by the experiment and explainers
-PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
-              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+PARAMS_5_2 = {'max_examples': 100, #if None than maximum is used
+              'lime': {'num_samples': 1000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 1000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen': {'n_inf': 10, 'n_features': 30, 'seed': 1, 'nrows': 1000, 'noise': 0.01}}
 
-experiment = "improved" \
-             ""
+experiment = "improved"
 results = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
 faith = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
 ndcg = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
@@ -121,10 +120,10 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   plt.close()
   return
 
-#run_5_2(save=True)
+run_5_2(save=True)
 save=False
 show=True
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
 plot_5_2(file=faithfile, save=save, show=show, plot=plot)
-#plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)
+plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)

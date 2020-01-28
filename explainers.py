@@ -1,6 +1,6 @@
 import scipy as sp
 import shap
-#import lime
+import lime
 import numpy as np
 import sklearn.metrics.pairwise
 from scipy import *
@@ -16,9 +16,11 @@ class ShapExplainer:
     self.nsamples=nsamples
     self.num_features=num_features
     if num_clusters:
-      background_data = shap.kmeans(background_data, num_clusters)  # background dataset to use for integrating out features
+      #for generated data use clusters
+      background_data = shap.kmeans(background_data, num_clusters)
     else:
-      background_data = csr_matrix(background_data[0].shape, dtype=int8) #empty dataframe, because missing words should be represented by 0
+      #for text data, use empty dataframe, because missing words should be represented by 0
+      background_data = csr_matrix(background_data[0].shape, dtype=int8)
     self.explainer = shap.KernelExplainer(model.predict_proba, background_data, logit='identity')
   def explain_instance(self, *args, **kwds):
     instance_vector = args[0]

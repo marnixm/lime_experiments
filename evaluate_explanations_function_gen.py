@@ -60,7 +60,7 @@ class ExplanationEvaluator:
           # lengths = [len(coefNonZero) for row in nonzero]
           length = len(self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0])
 
-          if np.average(length) <= 10:
+          if np.max(length) <= 10:
             print('Logreg for ', dataset, ' has length',  np.mean(length), 'with C=', c)
             #print('And max length = ', np.max(lengths), ', min length = ', np.min(lengths))
             break
@@ -135,18 +135,17 @@ class ExplanationEvaluator:
         c_features = [f for _, f in sorted(zip(c_importance,c_features), key=lambda z: abs(z[0]), reverse=True)]
         print('classifier:', c)
         for i in range(len(self.test_data[d])):
+          exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], budget, d)
+          exp_features = [x[0] for x in exp]
+
           if d == "Generated":  df = list(range(len(self.test_vectors[d][i]))) #all features exist for generated data
           elif c == 'l1logreg': df = self.test_vectors[d][i].nonzero()[1]
           elif c == 'tree':     df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i], d)
           ###order by feature importance
-          true_features = [f for _, f in sorted(zip(c_features, df), key=lambda z: z[0], reverse=True)]
+          true_features = [f for f in c_features if f in df]
           if len(true_features) == 0:
             continue
-          """if len(df) > 2 and not np.array_equal(df,true_features) and c =='tree':
-            print(df, true_features)"""
 
-          exp = explain_fn(self.test_vectors[d][i], self.test_labels[d][i], self.classifiers[d][c], budget, d)
-          exp_features = [x[0] for x in exp]
           #true_features = true_features[:budget] #cut-off at budget=10
           #todo check impact of below
           #exp_features = exp_features[:len(true_features)] #cut-off at |tf|<=10
@@ -154,13 +153,13 @@ class ExplanationEvaluator:
           test_results[d][c].append(float(len(np.intersect1d(true_features, exp_features))
                                           / len(true_features)))
           #Faithfulness
-          # faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
+          #faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           #NDCG
-          # if len(exp_features) < len(true_features): #todo test
+          # if len(exp_features) < len(true_features):
           #   print('true',true_features)
           #   print('exp', exp_features)
           #   a=2
-          true_features = true_features[:len(exp_features)]  # cut-off at |ef|<=10 todo
+          true_features = true_features[:len(exp_features)]  # cut-off at |ef|<=10
           exp_features = exp_features[:len(true_features)]  # cut-off at |tf|<=10
           ndcg[d][c].append(ndcg_score(true_features, exp_features))
           if max_examples and i >= max_examples:
@@ -217,7 +216,7 @@ def main(dataset, algorithm, explain_method, parameters):
   print('Finish', datetime.datetime.now().strftime('%H.%M.%S'))
   print('Calc time',round((datetime.datetime.now()-startTime).total_seconds()/60,3),' min\n\n')
   print('Average test: ', np.mean(test_results[dataset][algorithm]))
-  #out = {'train': train_results[dataset][algorithm], 'test' : test_results[dataset][algorithm]}
+
   return {'dataset': dataset, 'alg': algorithm, 'exp':  explain_method,
           'score':  test_results[dataset][algorithm],
           'faithfulness': faith[dataset][algorithm],
