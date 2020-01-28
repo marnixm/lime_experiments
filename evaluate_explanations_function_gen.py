@@ -143,15 +143,14 @@ class ExplanationEvaluator:
           elif c == 'tree':     df = get_tree_explanation(self.classifiers[d][c], self.test_vectors[d][i], d)
           ###order by feature importance
           true_features = [f for f in c_features if f in df]
-          if len(true_features) == 0:
-            continue
+          if len(true_features) == 0: continue
 
-          #true_features = true_features[:budget] #cut-off at budget=10
-          #todo check impact of below
-          #exp_features = exp_features[:len(true_features)] #cut-off at |tf|<=10
+          # todo check impact of cut-offs
+          true_features = true_features[:budget] #cut-off at budget=10
+          #exp_features = exp_features[:budget] #cut-off at |tf|<=10
           #Recall
-          test_results[d][c].append(float(len(np.intersect1d(true_features, exp_features))
-                                          / len(true_features)))
+          recall = float(len(np.intersect1d(true_features, exp_features)) / len(true_features))
+          test_results[d][c].append(recall)
           #Faithfulness
           #faith[d][c].append(faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i]))
           #NDCG
@@ -159,9 +158,11 @@ class ExplanationEvaluator:
           #   print('true',true_features)
           #   print('exp', exp_features)
           #   a=2
-          true_features = true_features[:len(exp_features)]  # cut-off at |ef|<=10
-          exp_features = exp_features[:len(true_features)]  # cut-off at |tf|<=10
-          ndcg[d][c].append(ndcg_score(true_features, exp_features))
+          minl = min(len(true_features), len(exp_features))
+          true_features = true_features[:minl]  # cut-off at |ef|<=10
+          exp_features = exp_features[:minl]  # cut-off at |tf|<=10
+          NDCG = ndcg_score(true_features, exp_features)
+          ndcg[d][c].append(NDCG*recall)
           if max_examples and i >= max_examples:
             break
     return train_results, test_results, faith, ndcg
