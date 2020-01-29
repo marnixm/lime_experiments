@@ -42,7 +42,7 @@ class ExplanationEvaluator:
       self.classifier_names = ['l1logreg', 'tree']
     self.classifiers = {}
     self.max_iter = logregMaxIter
-  def init_classifiers(self, dataset):
+  def init_classifiers(self, dataset, parameters):
     self.classifiers[dataset] = {}
     for classifier in self.classifier_names:
       if classifier == 'l1logreg':
@@ -58,7 +58,8 @@ class ExplanationEvaluator:
           coefs = self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0]
           lengths = [len(np.intersect1d(instance, coefs)) for instance in nonzero]
           if np.average(lengths) <= 10:
-            print('Logreg for ', dataset, ' has length',  np.mean(lengths), 'with C=', c)
+            print('Logreg for', dataset, parameters['Gen_count'] if dataset=="Generated" else "",
+                                                 'has length',  np.mean(lengths), 'with C=', c)
             break
       if classifier == 'tree':
         self.classifiers[dataset]['tree'] = tree.DecisionTreeClassifier(random_state=1)
@@ -72,7 +73,7 @@ class ExplanationEvaluator:
     self.test_labels = {}
     for dataset in dataset_names:
       self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], self.test_labels[dataset], _ = LoadDataset(dataset, parameters)
-  def vectorize_and_train(self, dataset_names):
+  def vectorize_and_train(self, dataset_names, parameters):
     self.vectorizer = {}
     self.train_vectors = {}
     self.test_vectors = {}
@@ -90,7 +91,7 @@ class ExplanationEvaluator:
         self.inverse_vocabulary[d] = terms[np.argsort(indices)]
     for d in self.train_data:
       print(d)
-      self.init_classifiers(d)
+      self.init_classifiers(d, parameters)
   def measure_explanation_hability(self, explain_fn, max_examples=None):
     """Asks for explanations for all predictions in the train and test set, with
     budget = size of explanation. Returns two maps (train_results,
@@ -155,7 +156,7 @@ def main(dataset, algorithm, explain_method, parameters):
 
   evaluator = ExplanationEvaluator(classifier_names=[algorithm], logregMaxIter=parameters['max_iter_logreg'])
   evaluator.load_datasets([dataset], parameters)
-  evaluator.vectorize_and_train([dataset])
+  evaluator.vectorize_and_train([dataset], parameters)
   explain_fn = None
   if explain_method == 'lime':
     rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']

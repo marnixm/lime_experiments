@@ -130,10 +130,10 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   plt.close()
   return
 
-run_5_2(save=True)
+#run_5_2(save=True)
 save=True
 show=True
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
-plot_5_2(file=faithfile, save=save, show=show, plot=plot)
+if not DATASETS[0]=="Generated": plot_5_2(file=faithfile, save=save, show=show, plot=plot)
 plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)
