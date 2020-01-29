@@ -29,7 +29,7 @@ def LoadDataset(dataset_name, parameters):
     train_labels = newsgroups_train.target
     test_data = newsgroups_test.data
     test_labels = newsgroups_test.target
-    return train_data, train_labels, test_data, test_labels, class_names
+    return train_data, train_labels, test_data, test_labels, class_names, None
   if dataset_name.startswith('multi_polarity'):
     name = dataset_name.split('_')[2]
     return LoadMultiDomainDataset(POLARITY_PATH + name)
@@ -46,7 +46,8 @@ def LoadDataset(dataset_name, parameters):
     train_data, test_data, train_labels, test_labels = train_test_split(data, data_labels,
                                                                         test_size = 0.2,
                                                                         random_state = params['seed'])
-    return train_data, np.array(train_labels), test_data, np.array(test_labels), ""
+    generated_data_mean = np.mean(train_data, axis=0)
+    return train_data, np.array(train_labels), test_data, np.array(test_labels), "", generated_data_mean
 
 def LoadMultiDomainDataset(path_data, remove_bigrams=True):
   random.seed(1)
@@ -71,4 +72,4 @@ def LoadMultiDomainDataset(path_data, remove_bigrams=True):
   test_data = pos[split_pos:] + neg[split_neg:]
   train_labels = [1] * len(pos[:split_pos]) + [0] * len(neg[:split_neg])
   test_labels = [1] * len(pos[split_pos:]) + [0] * len(neg[split_neg:])
-  return train_data, np.array(train_labels), test_data, np.array(test_labels), ['neg', 'pos']
+  return train_data, np.array(train_labels), test_data, np.array(test_labels), ['neg', 'pos'], None

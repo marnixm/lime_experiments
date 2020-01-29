@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import sklearn
 from sklearn.metrics import *
 
-def faithfulness(explanation, skmodel, instance):
+def faithfulness(explanation, skmodel, instance, perturb):
   """
   explanability metric: faithfulness
   Oneliner. Measure if feature attribution has same effect as model when feature is perturbed
@@ -19,7 +19,11 @@ def faithfulness(explanation, skmodel, instance):
   for idx, value in explanation:
     # discount removing feature
     ins = instance.copy()
-    ins[0,idx] = 0 #background
+    if perturb is not None: #generated data
+      ins[idx] = perturb[idx]
+      ins = [ins]
+    else:
+      ins[0,idx] = 0
     model.append(skmodel.predict_proba(ins)[0][0])
     explain.append(value)
 

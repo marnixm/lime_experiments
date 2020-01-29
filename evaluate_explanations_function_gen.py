@@ -71,8 +71,10 @@ class ExplanationEvaluator:
     self.train_labels = {}
     self.test_data = {}
     self.test_labels = {}
+    self.perturb_instance = {}
     for dataset in dataset_names:
-      self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], self.test_labels[dataset], _ = LoadDataset(dataset, parameters)
+      self.train_data[dataset], self.train_labels[dataset], self.test_data[dataset], \
+      self.test_labels[dataset], _, self.perturb_instance[dataset] = LoadDataset(dataset, parameters)
   def vectorize_and_train(self, dataset_names, parameters):
     self.vectorizer = {}
     self.train_vectors = {}
@@ -137,9 +139,8 @@ class ExplanationEvaluator:
           RECALL = float(len(np.intersect1d(true_features, exp_features)) / len(true_features))
           test_results[d][c].append(RECALL)
           #Faithfulness
-          if not d=="Generated": #todo remove
-            FAITH = faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i])
-            faith[d][c].append(FAITH)
+          FAITH = faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i], self.perturb_instance[d])
+          faith[d][c].append(FAITH)
           #Ndcg
           NDCG = ndcg_score(true_features, exp_features)
           ndcg[d][c].append(NDCG*RECALL) #we use recall to adjust for the cut-off at minimum length
