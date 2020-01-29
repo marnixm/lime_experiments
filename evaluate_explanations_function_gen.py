@@ -59,13 +59,14 @@ class ExplanationEvaluator:
           lengths = [len(np.intersect1d(instance, coefs)) for instance in nonzero]
           if np.average(lengths) <= 10:
             print('Logreg for', dataset, parameters['Gen_count'] if dataset=="Generated" else "",
-                                                 'has length',  np.mean(lengths), 'with C=', c)
+                  'has mean length',  np.mean(lengths), 'with C=', c)
             break
       if classifier == 'tree':
         self.classifiers[dataset]['tree'] = tree.DecisionTreeClassifier(random_state=1)
         self.classifiers[dataset]['tree'].fit(self.train_vectors[dataset], self.train_labels[dataset])
         lengths = [len(get_tree_explanation(self.classifiers[dataset]['tree'], self.train_vectors[dataset][i], dataset)) for i in range(self.train_vectors[dataset].shape[0])]
-        print('Tree for ', dataset, ' has mean length',  np.mean(lengths))
+        print('Tree for ', dataset, parameters['Gen_count'] if dataset=="Generated" else "",
+              ' has mean length',  np.mean(lengths))
   def load_datasets(self, dataset_names, parameters):
     self.train_data = {}
     self.train_labels = {}

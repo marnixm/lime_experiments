@@ -10,23 +10,24 @@ import os
 
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
 DATA_NAMES = ['Books','Dvds','Kitchen']
-if False: #Generated data instead of multi polarity
+if True:
+  # Use generated data instead of multi polarity
   DATASETS = ['Generated'] * 4
   DATA_NAMES = ["Generated " + str(i + 1) for i in range(4)]
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']
-#collection of parameters used by the experiment and explainers
-PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
-              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+# collection of parameters used by the experiment and explainers
+PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
+              'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 15000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen_count': 0, #to pick synthetic data parameters
               'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
-              'Gen2': {'n_inf': 10, 'n_redundant': 5, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
-              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.20, 'seed': 1, 'nrows': 2000},
-              'Gen4': {'n_inf': 10, 'n_redundant': 5, 'n_features': 30, 'noise': 0.20, 'seed': 1, 'nrows': 2000}}
+              'Gen2': {'n_inf': 10, 'n_redundant': 8, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.30, 'seed': 1, 'nrows': 2000},
+              'Gen4': {'n_inf': 10, 'n_redundant': 8, 'n_features': 30, 'noise': 0.30, 'seed': 1, 'nrows': 2000}}
 
 experiment = "improved"
 results = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
@@ -133,7 +134,7 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
 
 run_5_2(save=True)
 save=True
-show=True
+show=False
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
 plot_5_2(file=faithfile, save=save, show=show, plot=plot)
