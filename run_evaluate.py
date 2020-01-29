@@ -10,16 +10,16 @@ import os
 
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
 DATA_NAMES = ['Books','Dvds','Kitchen']
-if True: #Generated
+if True: #Generated data instead of multi polarity
   DATASETS = ['Generated'] * 4
   DATA_NAMES = ["Generated " + str(i + 1) for i in range(4)]
 ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']
 #collection of parameters used by the experiment and explainers
-PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
-              'lime': {'num_samples': 200, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
+              'lime': {'num_samples': 1000, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 1000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen_count': 0, #to pick synthetic data parameters
@@ -66,8 +66,8 @@ def run_5_2(save=True):
   if save:
     pickle.dump(results, open(path + resultsfile, "wb"))
     pickle.dump(calcTimes, open(path + calcTimefile, "wb"))
-    if not experiment=="improved": pickle.dump(faith, open(path + faithfile, "wb"))
-    if     experiment=="improved": pickle.dump(ndcg, open(path + ndcgfile, "wb"))
+    if not DATASETS[0]=="Generated": pickle.dump(faith, open(path + faithfile, "wb"))
+    if       experiment=="improved": pickle.dump(ndcg, open(path + ndcgfile, "wb"))
   return
 
 def plot_5_2(file, save=False, show=True, plot='bar'):
@@ -130,10 +130,10 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   plt.close()
   return
 
-#run_5_2(save=True)
+run_5_2(save=True)
 save=True
 show=True
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
-#plot_5_2(file=faithfile, save=save, show=show, plot=plot)
+plot_5_2(file=faithfile, save=save, show=show, plot=plot)
 plot_5_2(file=ndcgfile, save=save, show=show, plot=plot)

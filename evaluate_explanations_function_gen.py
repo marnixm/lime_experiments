@@ -51,18 +51,19 @@ class ExplanationEvaluator:
           self.classifiers[dataset]['l1logreg'] = linear_model.LogisticRegression(penalty='l1', fit_intercept=True, C=c,
                                                                                   solver='saga', max_iter=self.max_iter)
           self.classifiers[dataset]['l1logreg'].fit(self.train_vectors[dataset], self.train_labels[dataset])
-          length = len(self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0])
-          if np.average(length) <= 10:
-            print('Logreg for ', dataset, ' has length',  np.mean(length), 'with C=', c)
-            #print('And max length = ', np.max(lengths), ', min length = ', np.min(lengths))
+          if dataset=="Generated":
+            nonzero = np.array([instance.nonzero()[0] for instance in self.train_vectors[dataset]])
+          else:
+            nonzero = np.split(self.train_vectors[dataset].indices, self.train_vectors[dataset].indptr[1:-1])
+          coefs = self.classifiers[dataset]['l1logreg'].coef_[0].nonzero()[0]
+          lengths = [len(np.intersect1d(instance, coefs)) for instance in nonzero]
+          if np.average(lengths) <= 10:
+            print('Logreg for ', dataset, ' has length',  np.mean(lengths), 'with C=', c)
             break
       if classifier == 'tree':
         self.classifiers[dataset]['tree'] = tree.DecisionTreeClassifier(random_state=1)
         self.classifiers[dataset]['tree'].fit(self.train_vectors[dataset], self.train_labels[dataset])
         lengths = [len(get_tree_explanation(self.classifiers[dataset]['tree'], self.train_vectors[dataset][i], dataset)) for i in range(self.train_vectors[dataset].shape[0])]
-        """f = set(self.classifiers[dataset]['tree'].tree_.feature) #features of model
-        lengths = [len(np.intersect1d(f, set(self.train_vectors[dataset][i].nonzero()[1]))) for i in range (self.train_vectors[dataset].shape[0])]
-        """ #todo^^
         print('Tree for ', dataset, ' has mean length',  np.mean(lengths))
   def load_datasets(self, dataset_names, parameters):
     self.train_data = {}
