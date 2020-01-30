@@ -24,10 +24,10 @@ PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen_count': 0, #to pick synthetic data parameters
-              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
-              'Gen2': {'n_inf': 10, 'n_redundant': 8, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
-              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.30, 'seed': 1, 'nrows': 2000},
-              'Gen4': {'n_inf': 10, 'n_redundant': 8, 'n_features': 30, 'noise': 0.30, 'seed': 1, 'nrows': 2000}}
+              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 100, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen2': {'n_inf': 10, 'n_redundant': 20, 'n_features': 100, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 100, 'noise': 0.3, 'seed': 1, 'nrows': 2000},
+              'Gen4': {'n_inf': 10, 'n_redundant': 20, 'n_features': 100, 'noise': 0.3, 'seed': 1, 'nrows': 2000}}
 
 experiment = "improved"
 results = [[[ [] for i in range(len(EXPLAINER))] for j in range(len(ALGORITHM))] for k in range(len(DATASETS))]
@@ -74,6 +74,7 @@ def run_5_2(save=True):
 
 def plot_5_2(file, save=False, show=True, plot='bar'):
   x = np.arange(len(EXPLAINER))
+  gencount=0
   width = 0.35
   results = np.array(pickle.load(open(path + file, "rb")))
   neg=False
@@ -93,11 +94,17 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   bigax[0,1].set_title(measure + ' (in %)', fontsize=20)
 
   for d, dat in enumerate(DATA_NAMES):
+    gencount+=1
     for a, alg in enumerate(ALG_NAMES):
       ax = bigax[a,d]
       # set x and y labels
       if d==0: ax.set_ylabel(alg, fontsize=15)
-      if a==1: ax.set_xlabel(dat, fontsize=15)
+      if a==1:
+        if not dat.startswith("Generated"):
+          ax.set_xlabel(dat, fontsize=15)
+        else:
+          ax.set_xlabel('Redundancy: ' + str(PARAMS_5_2['Gen'+str(gencount)]['n_redundant']) +
+                        '\nNoise: ' + str(PARAMS_5_2['Gen'+str(gencount)]['noise']),fontsize=15)
 
       for e, exp in enumerate(EXPLAINER):
         if plot=='bar':
@@ -134,7 +141,7 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
 
 run_5_2(save=True)
 save=True
-show=False
+show=True
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
 plot_5_2(file=faithfile, save=save, show=show, plot=plot)
