@@ -13,22 +13,22 @@ EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')] #, ('greedy
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if True:
   # Use generated data instead of multi polarity
-  DATASETS = [('Generated', 'Gen')] * 2
+  DATASETS = [('Generated', 'Gen')] * 4
 
 #TODO check and run parameters
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
-              'lime': {'num_samples': 500, 'rho': 25},
-              'shap': {'nsamples': 500, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+              'lime': {'num_samples': 2000, 'rho': 25},
+              'shap': {'nsamples': 2000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'rf': {'n_estimators': 1000}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
               'max_examples': 10, #None
               'test_against': 'lime',
               'Gen_count': 0, #to pick synthetic data parameters
-              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 1000}, #todo change params
-              'Gen2': {'n_inf': 10, 'n_redundant': 20, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 1000},
-              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.3, 'seed': 1, 'nrows': 1000},
-              'Gen4': {'n_inf': 10, 'n_redundant': 20, 'n_features': 30, 'noise': 0.3, 'seed': 1, 'nrows': 1000}}
+              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000}, #todo change params
+              'Gen2': {'n_inf': 10, 'n_redundant': 20, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000},
+              'Gen4': {'n_inf': 10, 'n_redundant': 20, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000}}
 
 result_file, time_file = 'result5.3', 'calcTime5.3.p'
 F1 = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
@@ -64,14 +64,14 @@ def run_5_3(save=True):
     PARAMS_5_3['Gen_count'] += 1
     dat = dat[0]
     for a, alg in enumerate(algorithms):
-      print('\n',dat, PARAMS_5_3[Gen_count] if dat=="generated" else "", alg)
+      print('\n',dat, PARAMS_5_3['Gen_count'] if dat=="Generated" else "", alg)
       temp, time, diff, accuracy = data_trusting.main(dat, alg, PARAMS_5_3)
       Lmean, Ldiscount = zip(*diff['lime'])
       Smean, Sdiscount = zip(*diff['shap'])
       #print('difference to prediction', 'lime',round(np.mean(Lmean),1), 'shap',round(np.mean(Smean),1))
       #print('discount', 'lime', round(np.mean(Ldiscount),1), 'shap', round(np.mean(Sdiscount),1))
       if save: box(Lmean, Smean, Ldiscount, Sdiscount,  "Left: Diff to prediction - Right: Discount",
-                   path+'/Boxplots/boxplot_'+dat+'_'+alg+'.png')
+                   path+'/Boxplots/boxplot_'+dat+str(PARAMS_5_3[Gen_count]) if dat=="generated" else ""+'_'+alg+'.png')
       print('Time:',time)
       totalTime+=time
       for e, exp in enumerate(explainers):
@@ -81,18 +81,20 @@ def run_5_3(save=True):
         Accuracy[d][a][e] = accuracy[exp]
         resultsTotal[d][a][e].append(temp['F1'][exp])  # [0]:mean, [1]:std, [2]:p-value
 
-    print('total time:', totalTime)
-    if save:
-      pickle.dump(F1, open(path + result_file + '.p', "wb"))
-      pickle.dump(resultsTotal, open(path + result_file + '_total.p', "wb"))
-      #pickle.dump(calcTimes, open(path + filename2, "wb"))
-      for d, dat in enumerate(DATASETS):
-        pickle.dump(F1[d], open(path + "Datasets/" + dat[1] + '_F1.p', "wb"))
-        pickle.dump(Precision[d], open(path + "Datasets/" + dat[1] + '_precision.p', "wb"))
-        pickle.dump(Recall[d], open(path + "Datasets/" + dat[1] + '_recall.p', "wb"))
-        pickle.dump(Accuracy[d], open(path + "Datasets/" + dat[1] + '_accuracy.p', "wb"))
+  print('total time:', totalTime)
+  if save:
+    pickle.dump(F1, open(path + result_file + '.p', "wb"))
+    pickle.dump(resultsTotal, open(path + result_file + '_total.p', "wb"))
+    #pickle.dump(calcTimes, open(path + filename2, "wb"))
+    for d, dat in enumerate(DATASETS):
+      dat = dat[1] + (str(PARAMS_5_3['Gen_count']) if dat[1]=="Gen" else "")
+      pickle.dump(F1[d], open(path + "Datasets/" + dat + '_F1.p', "wb"))
+      pickle.dump(Precision[d], open(path + "Datasets/" + dat + '_precision.p', "wb"))
+      pickle.dump(Recall[d], open(path + "Datasets/" + dat + '_recall.p', "wb"))
+      pickle.dump(Accuracy[d], open(path + "Datasets/" + dat + '_accuracy.p', "wb"))
 
 def table_5_3(stats = ['F1'], save=False, f2=False):
+  PARAMS_5_3['Gen_count'] = 0
   explainNames = list(zip(*EXPLAINERS))[1]
   algNames = list(zip(*ALGORITHMS))[1]
   #resTotal = pickle.load(open(path + filename1 + '_total.p', 'rb'))
@@ -101,7 +103,8 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
   if save:
     if os.path.exists(fullPath): os.remove(fullPath)
     for dataset in DATASETS:
-      dataset = dataset[1]
+      PARAMS_5_3['Gen_count'] += 1
+      dataset = dataset[1] + (str(PARAMS_5_3['Gen_count']) if dataset[1] == "Gen" else "")
       for stat in stats:
         res = pickle.load(open(path + "Datasets/" + dataset +'_'+stat+'.p', "rb"))
         print(fullPath, '\nDataset:', dataset, '-', stat)
@@ -111,7 +114,8 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
 
   else:
     for dataset in DATASETS:
-      dataset = dataset[1]
+      PARAMS_5_3['Gen_count'] += 1
+      dataset = dataset[1] + (str(PARAMS_5_3['Gen_count']) if dataset[1] == "Gen" else "")
       for stat in stats:
         res = pickle.load(open(path + "Datasets/" + dataset +'_'+stat+'.p', "rb"))
         print('\nDataset:', dataset, '-', stat)
@@ -119,8 +123,11 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
 
   if f2:
     #measure that includes accuracy
+    PARAMS_5_3['Gen_count'] = 0
     for dataset in DATASETS:
-      dataset = dataset[1]
+      PARAMS_5_3['Gen_count'] += 1
+      dataset = dataset[1] + (str(PARAMS_5_3['Gen_count']) if dataset[1] == "Gen" else "")
+
       f1 = pickle.load(open(path + "Datasets/" + dataset +'_f1.p', "rb"))
       acc = pickle.load(open(path + "Datasets/" + dataset + '_accuracy.p', "rb"))
       f1 = pd.DataFrame(f1, columns=explainNames, index=algNames).transpose()
@@ -132,4 +139,4 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
   return
 
 run_5_3(save=True)
-table_5_3(stats=[], save=False, f2=True) #'precision', 'recall','accuracy'
+table_5_3(stats=[], save=False, f2=True) #'precision', 'recall', 'accuracy'
