@@ -18,9 +18,9 @@ ALGORITHM = ['l1logreg', 'tree']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['shap', 'lime', 'parzen']
 # collection of parameters used by the experiment and explainers
-PARAMS_5_2 = {'max_examples': None, #if None than maximum is used
-              'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000
-              'shap': {'nsamples': 15000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+PARAMS_5_2 = {'max_examples': 20, #if None than maximum is used
+              'lime': {'num_samples': 500, 'rho': 25},  #nsamples to 15.000
+              'shap': {'nsamples': 500, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'max_iter_logreg': 2000,
               'parzen_num_cv': 5,
               'Gen_count': 0, #to pick synthetic data parameters
@@ -139,9 +139,9 @@ def plot_5_2(file, save=False, show=True, plot='bar'):
   plt.close()
   return
 
-run_5_2(save=True)
-save=True
-show=True
+run_5_2(save=False)
+save=False
+show=False
 plot='bar'
 plot_5_2(file=resultsfile, save=save, show=show, plot=plot)
 plot_5_2(file=faithfile, save=save, show=show, plot=plot)

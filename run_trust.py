@@ -3,30 +3,40 @@ import numpy as np
 import pickle
 import pprint
 import pandas as pd
-from explanability_metric import printLog
+from explanability_metric import *
 import os
 import matplotlib.pyplot as plt
 
-DATASETS = [('multi_polarity_kitchen','Kitchen'), ('multi_polarity_dvd','DVDs'),('multi_polarity_books','Books')]
+DATASETS = [('multi_polarity_books','Books'),('multi_polarity_kitchen','Kitchen'), ('multi_polarity_dvd','DVDs')]
 ALGORITHMS = [('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')] #, ('greedy','Greedy'), ('random','Random')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
+if True:
+  # Use generated data instead of multi polarity
+  DATASETS = [('Generated', 'Gen')] * 2
 
 #TODO check and run parameters
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
-              'lime': {'num_samples': 15000, 'rho': 25},  #nsamples to 15.000,
-              'shap': {'nsamples': 15000, 'K': 10, 'num_features': 'num_features(10)'},  #what K (background data), nsampels?
+              'lime': {'num_samples': 500, 'rho': 25},
+              'shap': {'nsamples': 500, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'rf': {'n_estimators': 1000}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
-              'max_examples': None, #None
-              'test_against': 'lime'}
+              'max_examples': 10, #None
+              'test_against': 'lime',
+              'Gen_count': 0, #to pick synthetic data parameters
+              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 1000}, #todo change params
+              'Gen2': {'n_inf': 10, 'n_redundant': 20, 'n_features': 30, 'noise': 0.05, 'seed': 1, 'nrows': 1000},
+              'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 30, 'noise': 0.3, 'seed': 1, 'nrows': 1000},
+              'Gen4': {'n_inf': 10, 'n_redundant': 20, 'n_features': 30, 'noise': 0.3, 'seed': 1, 'nrows': 1000}}
+
 result_file, time_file = 'result5.3', 'calcTime5.3.p'
 F1 = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
 Precision = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
 Recall = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
 Accuracy = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
 resultsTotal = [[[ [] for i in range(len(EXPLAINERS))] for j in range(len(ALGORITHMS))] for k in range(len(DATASETS))]
+if DATASETS[0] == "Generated": path = path[:-1] + " generated/"
 
 def box(a,b, c, d, title, path):
   fig, (ax1, ax2) = plt.subplots(1, 2)
@@ -51,14 +61,15 @@ def run_5_3(save=True):
   algorithms = list(zip(*ALGORITHMS))[0]
 
   for d, dat in enumerate(DATASETS):
+    PARAMS_5_3['Gen_count'] += 1
     dat = dat[0]
     for a, alg in enumerate(algorithms):
-      print('\n',dat, alg)
+      print('\n',dat, PARAMS_5_3[Gen_count] if dat=="generated" else "", alg)
       temp, time, diff, accuracy = data_trusting.main(dat, alg, PARAMS_5_3)
       Lmean, Ldiscount = zip(*diff['lime'])
       Smean, Sdiscount = zip(*diff['shap'])
-      print('difference to prediction', 'lime',round(np.mean(Lmean),1), 'shap',round(np.mean(Smean),1))
-      print('discount', 'lime', round(np.mean(Ldiscount),1), 'shap', round(np.mean(Sdiscount),1))
+      #print('difference to prediction', 'lime',round(np.mean(Lmean),1), 'shap',round(np.mean(Smean),1))
+      #print('discount', 'lime', round(np.mean(Ldiscount),1), 'shap', round(np.mean(Sdiscount),1))
       if save: box(Lmean, Smean, Ldiscount, Sdiscount,  "Left: Diff to prediction - Right: Discount",
                    path+'/Boxplots/boxplot_'+dat+'_'+alg+'.png')
       print('Time:',time)
@@ -93,10 +104,10 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
       dataset = dataset[1]
       for stat in stats:
         res = pickle.load(open(path + "Datasets/" + dataset +'_'+stat+'.p', "rb"))
-        printLog(fullPath, '\nDataset:', dataset, '-', stat)
+        print(fullPath, '\nDataset:', dataset, '-', stat)
         table = pd.DataFrame(res*100, columns=explainNames, index=algNames).transpose().round(1)
-        printLog(fullPath,table)
-    printLog(fullPath, pprint.pformat(PARAMS_5_3))
+        print(fullPath,table)
+    print(fullPath, pprint.pformat(PARAMS_5_3))
 
   else:
     for dataset in DATASETS:
@@ -120,5 +131,5 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
       print(f1adj.round(1))
   return
 
-#run_5_3(save=True)
+run_5_3(save=True)
 table_5_3(stats=[], save=False, f2=True) #'precision', 'recall','accuracy'

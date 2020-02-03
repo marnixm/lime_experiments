@@ -27,7 +27,10 @@ class ShapExplainer:
     shap_values = self.explainer.shap_values(instance_vector, nsamples=self.nsamples, l1_reg=self.num_features)
     if len(kwds)==1: #trust
       neg_pos = 1 if kwds['predictPositive'] else 0
-      shap_instance = shap_values[neg_pos][0]  # explanation for negative result
+      if args[4] == "Generated":
+        shap_instance = shap_values[neg_pos]
+      else:
+        shap_instance = shap_values[neg_pos][0]  # explanation for negative result
     else: #evaluate
       if args[4]=="Generated":
         shap_instance = shap_values[0]
@@ -42,18 +45,30 @@ class ShapExplainer:
 ###############################
 class LimeTabExplainer:
   """Used to explain the generated data"""
-  def __init__(self, background_data, nsamples, K):
+  def __init__(self, background_data, nsamples, K, return_mean=False):
     self.nsamples=nsamples
+    self.return_mean = return_mean
     self.explainer = lime.lime_tabular.LimeTabularExplainer(training_data=background_data,
                                                             kernel_width=None, #can be specified
                                                             feature_selection='auto',
                                                             discretize_continuous=False)
   def explain_instance(self, *args, **kwds):
     instance_vector = args[0]
-    model = args[2]
+    classifier_fn = args[2]
+    if not hasattr(classifier_fn, '__call__'):
+      classifier_fn = classifier_fn.predict_proba
     K = args[3]
-    exp = self.explainer.explain_instance(instance_vector, model.predict_proba, num_samples=self.nsamples, num_features=K)
-    return exp.local_exp[1]
+    exp = self.explainer.explain_instance(instance_vector, classifier_fn, num_samples=self.nsamples, num_features=K)
+    if self.return_mean:
+      #trusting
+      used_features = [x[0] for x in exp.local_exp[1]]
+      scaled_data = np.array((instance_vector - self.explainer.scaler.mean_) / self.explainer.scaler.scale_)[used_features]
+      attributions = scaled_data * [x[1] for x in exp.local_exp[1]] #actual attributions
+      # exp.local_exp coefficient are for the *scaled* data. Thus we do transformations here according to:
+      # https://github.com/marcotcr/lime/issues/189
+      return [(x,y) for x,y in zip(used_features, attributions)], exp.intercept[1]
+    else:
+      return exp.local_exp[1]
 
 
 ###############################
