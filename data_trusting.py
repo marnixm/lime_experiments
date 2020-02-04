@@ -42,9 +42,6 @@ def main(dataset, algorithm, parameters):
   test_against = parameters['test_against']
 
   startTime = datetime.datetime.now()
-  # path = os.path.abspath(os.curdir) + '/log_5.3/' + \
-  #        str(startTime.strftime('%y%m%d %H.%M.%S')) + ' ' + dataset[-5:] \
-  #        + ' ' + algorithm +'.txt'
   print('Start', datetime.datetime.now().strftime('%H.%M.%S'))
 
   train_data, train_labels, test_data, test_labels, class_names, perturb_instance = LoadDataset(dataset, parameters)
@@ -62,10 +59,9 @@ def main(dataset, algorithm, parameters):
   np.random.seed(1)
   classifier = get_classifier(algorithm, vectorizer, parameters)
   classifier.fit(train_vectors, train_labels)
-  predictions = classifier.predict(test_vectors) #moved
-  predict_probas = classifier.predict_proba(test_vectors)[:, 1] #todo predict positive? -check-
+  predictions = classifier.predict(test_vectors)
+  predict_probas = classifier.predict_proba(test_vectors)[:, 1] #predict/explain positive instances
 
-  np.random.seed(1)
   untrustworthy_rounds = []
   all_features = list(range(train_vectors.shape[1]))
   num_untrustworthy = int(train_vectors.shape[1] * percent_untrustworthy)
@@ -74,11 +70,12 @@ def main(dataset, algorithm, parameters):
 
   rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
   if dataset=="Generated":
+    #tabular explainer for generated data
     LIME = explainers.LimeTabExplainer(train_vectors, nsamples=num_samples, K=parameters['max_examples'], return_mean=True)
   else:
     kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
     LIME = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text,
-                                                num_samples=num_samples, return_mean=True, verbose=False, return_mapped=True)
+                                                num_samples=num_samples, return_mean=True, return_mapped=True)
   nsamples, n_clusters = parameters['shap']['nsamples'], parameters['shap']['n_clusters']
   SHAP = explainers.ShapExplainer(classifier, train_vectors, nsamples=nsamples,
                                   num_features=parameters['shap']['num_features'],
@@ -88,10 +85,10 @@ def main(dataset, algorithm, parameters):
   cv_preds = sklearn.model_selection.cross_val_predict(classifier, train_vectors, train_labels, cv=parameters['parzen_num_cv'])
   parzen.fit(train_vectors, cv_preds, dataset)
   sigmas = {'multi_polarity_electronics': {'neighbors': 0.75, 'svm': 10.0, 'tree': 0.5, 'logreg': 0.5, 'random_forest': 0.5, 'embforest': 0.75},
-  'multi_polarity_kitchen': {'neighbors': 1.0, 'svm': 6.0, 'tree': 0.75, 'logreg': 0.25, 'random_forest': 6.0, 'embforest': 1.0},
-  'multi_polarity_dvd': {'neighbors': 0.5, 'svm': 0.75, 'tree': 8.0, 'logreg': 0.75, 'random_forest': 0.5, 'embforest': 5.0},
-  'multi_polarity_books': {'neighbors': 0.5, 'svm': 7.0, 'tree': 2.0, 'logreg': 1.0, 'random_forest': 1.0, 'embforest': 3.0},
-  'Generated': {'neighbors': 0.5, 'svm': 7.0, 'tree': 2.0, 'logreg': 1.0, 'random_forest': 1.0, 'embforest': 3.0}}
+  'multi_polarity_kitchen':               {'neighbors': 1.0, 'svm': 6.0, 'tree': 0.75, 'logreg': 0.25, 'random_forest': 6.0, 'embforest': 1.0},
+  'multi_polarity_dvd':                   {'neighbors': 0.5, 'svm': 0.75, 'tree': 8.0, 'logreg': 0.75, 'random_forest': 0.5, 'embforest': 5.0},
+  'multi_polarity_books':                 {'neighbors': 0.5, 'svm': 7.0, 'tree': 2.0, 'logreg': 1.0, 'random_forest': 1.0, 'embforest': 3.0},
+  'Generated':                            {'neighbors': 0.5, 'svm': 7.0, 'tree': 2.0, 'logreg': 1.0, 'random_forest': 1.0, 'embforest': 3.0}}
   parzen.sigma = sigmas[dataset][algorithm]
 
   exps = {}
@@ -149,23 +146,11 @@ def main(dataset, algorithm, parameters):
       tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy]) #discounted effect
       trust['lime'].add(i) if trust_fn(tot, prev_tot2) else mistrust['lime'].add(i)
 
-      # meanLime = round(mean, 1)
-      # l = sum([x[1] for x in exp if x[0] in untrustworthy])
-      # l_int = len([x[0] for x in exp if x[0] in untrustworthy])
-      # diff['lime'].append((abs(prev_tot - mean), abs(l)))
-
       exp = exps['shap'][i]
       prev_tot = predict_probas[i]
       prev_tot2 = SHAP.explainer.expected_value[1] + sum([x[1] for x in exp])
       tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy])
       trust['shap'].add(i) if trust_fn(tot, prev_tot2) else mistrust['shap'].add(i)
-
-      # b = sum([x[1] for x in exp if x[0] in untrustworthy])
-      # b_int = len([x[0] for x in exp if x[0] in untrustworthy])
-      # diff['shap'].append((abs(prev_tot - SHAP.explainer.expected_value[1]), abs(b)))
-
-      #print('lime', meanLime, "-" if l<0 else '+', abs(l), '| shap', round(SHAP.explainer.expected_value[1],1),
-      #      "-" if b<0 else '+', abs(b), "| pred:", round(prev_tot,1))
 
       exp, mean = exps['parzen'][i]
       prev_tot = mean
@@ -212,7 +197,7 @@ def main(dataset, algorithm, parameters):
     print(expl, np.mean(f1[expl]), '+-', np.std(f1[expl]), 'pvalue', sp.stats.ttest_ind(f1[expl], f1[test_against])[1].round(4))
     results['F1'].update({expl: [np.mean(f1[expl]), np.std(f1[expl]), sp.stats.ttest_ind(f1[expl], f1[test_against])[1].round(4)]})
 
-  #added, to verify initial explanation accuracy
+  #Calculate initial explanation accuracy
   for expl in explainer_names:
     acc = accuracy[expl]
     acc = sum(acc)/len(acc)

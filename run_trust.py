@@ -1,34 +1,33 @@
-import data_trusting
-import numpy as np
+import os
 import pickle
 import pprint
+import numpy as np
 import pandas as pd
-from explanability_metric import *
-import os
 import matplotlib.pyplot as plt
+from explanability_metric import *
+import data_trusting
 
 DATASETS = [('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
-ALGORITHMS = ['neighbors', 'NN'] #[('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
+ALGORITHMS = [('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if True:
   # Use generated data instead of multi polarity
   DATASETS = [('Generated', 'Gen')] * 4
 
-#TODO check and run parameters
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
-              'lime': {'num_samples': 1000, 'rho': 25},
-              'shap': {'nsamples': 1000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+              'lime': {'num_samples': 15000, 'rho': 25},
+              'shap': {'nsamples': 15000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'rf': {'n_estimators': 1000}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
-              'max_examples': 200, #None
+              'max_examples': None, #None for all 400 instances
               'test_against': 'shap',
               'Gen_count': 0, #to pick synthetic data parameters
               'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
-              'Gen2': {'n_inf': 10, 'n_redundant': 20, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
+              'Gen2': {'n_inf': 10, 'n_redundant': 15, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
               'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000},
-              'Gen4': {'n_inf': 10, 'n_redundant': 20, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000}}
+              'Gen4': {'n_inf': 10, 'n_redundant': 15, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000}}
 
 result_file, time_file = 'result5.3', 'calcTime5.3.p'
 F1 = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
@@ -38,7 +37,7 @@ Accuracy = np.zeros((len(DATASETS), len(ALGORITHMS), len(EXPLAINERS)))
 resultsTotal = [[[ [] for i in range(len(EXPLAINERS))] for j in range(len(ALGORITHMS))] for k in range(len(DATASETS))]
 if DATASETS[0] == "Generated": path = path[:-1] + " generated/"
 
-def box(a,b, c, d, title, path):
+def box(a,b,c,d, title, path):
   fig, (ax1, ax2) = plt.subplots(1, 2)
   fig.suptitle(title)
   ax1.boxplot([a, b])
@@ -47,12 +46,6 @@ def box(a,b, c, d, title, path):
   #fig.close()
   fig.clf()
   return
-
-def heat(data):
-  sns.heatmap(data, annot=True, fmt="f")
-  plt.show()
-  #plt.clf()
-  #heat(table)
 
 def run_5_3(save=True):
   totalTime = 0
@@ -66,12 +59,13 @@ def run_5_3(save=True):
     for a, alg in enumerate(algorithms):
       print('\n',dat, PARAMS_5_3['Gen_count'] if dat=="Generated" else "", alg)
       temp, time, diff, accuracy = data_trusting.main(dat, alg, PARAMS_5_3)
-      Lmean, Ldiscount = zip(*diff['lime'])
-      Smean, Sdiscount = zip(*diff['shap'])
-      #print('difference to prediction', 'lime',round(np.mean(Lmean),1), 'shap',round(np.mean(Smean),1))
-      #print('discount', 'lime', round(np.mean(Ldiscount),1), 'shap', round(np.mean(Sdiscount),1))
-      if save: box(Lmean, Smean, Ldiscount, Sdiscount,  "Left: Diff to prediction - Right: Discount",
-                   path+'/Boxplots/boxplot_'+dat+str(PARAMS_5_3[Gen_count]) if dat=="generated" else ""+'_'+alg+'.png')
+      # todo clean below
+      # Lmean, Ldiscount = zip(*diff['lime'])
+      # Smean, Sdiscount = zip(*diff['shap'])
+      # print('difference to prediction', 'lime',round(np.mean(Lmean),1), 'shap',round(np.mean(Smean),1))
+      # print('discount', 'lime', round(np.mean(Ldiscount),1), 'shap', round(np.mean(Sdiscount),1))
+      # if save: box(Lmean, Smean, Ldiscount, Sdiscount,  "Left: Diff to prediction - Right: Discount",
+      #              path+'/Boxplots/boxplot_'+dat+str(PARAMS_5_3[Gen_count]) if dat=="generated" else ""+'_'+alg+'.png')
       print('Time:',time)
       totalTime+=time
       for e, exp in enumerate(explainers):
@@ -86,7 +80,6 @@ def run_5_3(save=True):
     PARAMS_5_3['Gen_count'] = 0
     pickle.dump(F1, open(path + result_file + '.p', "wb"))
     pickle.dump(resultsTotal, open(path + result_file + '_total.p', "wb"))
-    #pickle.dump(calcTimes, open(path + filename2, "wb"))
     for d, dat in enumerate(DATASETS):
       PARAMS_5_3['Gen_count'] += 1
       dat = dat[1] + (str(PARAMS_5_3['Gen_count']) if dat[1]=="Gen" else "")
@@ -99,9 +92,9 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
   PARAMS_5_3['Gen_count'] = 0
   explainNames = list(zip(*EXPLAINERS))[1]
   algNames = list(zip(*ALGORITHMS))[1]
-  #resTotal = pickle.load(open(path + filename1 + '_total.p', 'rb'))
+  # resTotal - read here if neccesary
 
-  fullPath = path+'result5.3_Tables.txt'
+  fullPath = path + 'result5.3_Tables.txt'
   if save:
     if os.path.exists(fullPath): os.remove(fullPath)
     for dataset in DATASETS:
@@ -124,7 +117,7 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
         print(pd.DataFrame(res*100, columns=explainNames, index=algNames).transpose().round(1))
 
   if f2:
-    #measure that includes accuracy
+    # f2, now called f1 adjusted: measure that includes accuracy
     PARAMS_5_3['Gen_count'] = 0
     for dataset in DATASETS:
       PARAMS_5_3['Gen_count'] += 1
@@ -141,4 +134,4 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
   return
 
 run_5_3(save=True)
-table_5_3(stats=[], save=False, f2=True) #'precision', 'recall', 'accuracy'
+table_5_3(stats=[], save=True, f2=True) # stats options:'precision', 'recall', 'accuracy', 'f1'
