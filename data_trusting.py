@@ -26,7 +26,7 @@ def get_classifier(name, vectorizer, parameters):
   if name == 'random_forest':
     return ensemble.RandomForestClassifier(n_estimators=parameters['rf']['n_estimators'], random_state=1, max_depth=5, n_jobs=10)
   if name == 'svm':
-    return svm.SVC(probability=True, kernel='rbf', C=10,gamma=0.001)
+    return svm.SVC(probability=True, kernel='rbf', C=10, gamma=0.001)
   if name == 'tree':
     return tree.DecisionTreeClassifier(random_state=1)
   if name == 'neighbors':

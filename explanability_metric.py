@@ -1,8 +1,8 @@
 import os
 import sys
+import sklearn
 import numpy as np
 import matplotlib.pyplot as plt
-import sklearn
 from sklearn.metrics import *
 
 def faithfulness(explanation, skmodel, instance, perturb):
@@ -19,7 +19,8 @@ def faithfulness(explanation, skmodel, instance, perturb):
   for idx, value in explanation:
     # discount removing feature
     ins = instance.copy()
-    if perturb is not None: #generated data
+    if perturb is not None:
+      #generated data
       ins[idx] = perturb[idx]
       ins = [ins]
     else:
@@ -28,15 +29,11 @@ def faithfulness(explanation, skmodel, instance, perturb):
     explain.append(value)
 
   if len(set(explain))<=1 or len(set(model))<=1:
-    # Correlation between list and point does not exist
-    """explanation and model have no intersection
-    inter = set([x[0] for x in explanation]).intersection(set(instance.nonzero()[1]))
-    print(inter)"""
+    # Correlation between list and point does not exist,
+    # thus faithfulness is not defined
     return np.nan
 
   c = np.corrcoef(model, explain)
-  """plt.scatter(model, explain)
-  plt.show()"""
   return -c[0, 1]
 
 def ndcg_score(true_features, exp_features):
@@ -44,11 +41,11 @@ def ndcg_score(true_features, exp_features):
   Explanability metric: ndcg
   Oneliner. Compares ranking of features in model to explainer ranking, ranked by feature importance/attribution
   """
-  #cut-off the feature vectors at minimum lenght
-  #accounted for by multiplying ndcg with recall
-  minl = min(len(true_features), len(exp_features))
-  true_features = true_features[:minl]
-  exp_features = exp_features[:minl]
+  # cut-off the feature vectors at minimum lenght
+  # accounted for by multiplying ndcg with recall
+  minlength = min(len(true_features), len(exp_features))
+  true_features = true_features[:minlength]
+  exp_features = exp_features[:minlength]
 
   if len(true_features) > 1:
     score = sklearn.metrics.ndcg_score([true_features], [exp_features])
@@ -56,13 +53,4 @@ def ndcg_score(true_features, exp_features):
     # length of 1, thus binary score
     score = int(true_features == exp_features)
 
-  if score < 0:  # todo test
-    print("Warning NDCG negative", "@" * 100)
-    a = 2
   return score
-
-# def print(path, *args):
-#   text = ' '.join([str(arg) for arg in args])
-#   print(text)
-#   with open(path, 'a') as log:
-#     log.write(text + '\n')

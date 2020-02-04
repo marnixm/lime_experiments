@@ -59,13 +59,6 @@ def run_5_3(save=True):
     for a, alg in enumerate(algorithms):
       print('\n',dat, PARAMS_5_3['Gen_count'] if dat=="Generated" else "", alg)
       temp, time, diff, accuracy = data_trusting.main(dat, alg, PARAMS_5_3)
-      # todo clean below
-      # Lmean, Ldiscount = zip(*diff['lime'])
-      # Smean, Sdiscount = zip(*diff['shap'])
-      # print('difference to prediction', 'lime',round(np.mean(Lmean),1), 'shap',round(np.mean(Smean),1))
-      # print('discount', 'lime', round(np.mean(Ldiscount),1), 'shap', round(np.mean(Sdiscount),1))
-      # if save: box(Lmean, Smean, Ldiscount, Sdiscount,  "Left: Diff to prediction - Right: Discount",
-      #              path+'/Boxplots/boxplot_'+dat+str(PARAMS_5_3[Gen_count]) if dat=="generated" else ""+'_'+alg+'.png')
       print('Time:',time)
       totalTime+=time
       for e, exp in enumerate(explainers):
