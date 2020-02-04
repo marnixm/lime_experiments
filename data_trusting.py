@@ -22,7 +22,6 @@ from explanability_metric import *
 
 def get_classifier(name, vectorizer, parameters):
   if name == 'logreg':
-    #TODO should we add a regularization? use solver='saga'
     return linear_model.LogisticRegression(fit_intercept=True, solver='lbfgs')
   if name == 'random_forest':
     return ensemble.RandomForestClassifier(n_estimators=parameters['rf']['n_estimators'], random_state=1, max_depth=5, n_jobs=10)
@@ -38,12 +37,10 @@ def get_classifier(name, vectorizer, parameters):
 def main(dataset, algorithm, parameters):
   num_features = parameters['num_features']
   percent_untrustworthy = parameters['percent_untrustworthy']
-
   num_rounds = parameters['num_rounds']
   max_examples = parameters['max_examples']
   test_against = parameters['test_against']
 
-  #added by Marnix
   startTime = datetime.datetime.now()
   # path = os.path.abspath(os.curdir) + '/log_5.3/' + \
   #        str(startTime.strftime('%y%m%d %H.%M.%S')) + ' ' + dataset[-5:] \
@@ -97,11 +94,10 @@ def main(dataset, algorithm, parameters):
   'Generated': {'neighbors': 0.5, 'svm': 7.0, 'tree': 2.0, 'logreg': 1.0, 'random_forest': 1.0, 'embforest': 3.0}}
   parzen.sigma = sigmas[dataset][algorithm]
 
-  #random = explainers.RandomExplainer()
   exps = {}
   diff = {}
   accuracy = {}
-  explainer_names = ['shap', 'lime','parzen'] #, 'greedy', 'random']
+  explainer_names = ['shap', 'lime','parzen']
   trust_fn = lambda prev, curr: ((prev > 0.5 and curr > 0.5) or (prev <= 0.5 and curr <= 0.5))
   trust_fn_all = lambda exp, unt: len([x[0] for x in exp if x[0] in unt]) == 0
   for expl in explainer_names: exps[expl] = []
@@ -127,11 +123,6 @@ def main(dataset, algorithm, parameters):
                                      mean + sum([x[1] for x in exp])))
     exps['parzen'].append((exp, mean))
 
-    """exp = random.explain_instance(test_vectors[i], 1, None, num_features, None)
-    exps['random'].append(exp)
-    exp = explainers.explain_greedy_martens(test_vectors[i], predictions[i], classifier.predict_proba, num_features)
-    exps['greedy'].append(exp)"""
-
   precision = {}
   recall = {}
   f1 = {}
@@ -153,27 +144,25 @@ def main(dataset, algorithm, parameters):
     for i in range(test_vectors.shape[0]):
       if i==max_examples: break
       exp, mean = exps['lime'][i]
-      #print('lime',round(mean,2), [(x[0], round(x[1], 1)) for x in exp])
       prev_tot = predict_probas[i]
       prev_tot2 = sum([x[1] for x in exp]) + mean #what it should have been
       tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy]) #discounted effect
       trust['lime'].add(i) if trust_fn(tot, prev_tot2) else mistrust['lime'].add(i)
 
-      meanLime = round(mean, 1)
-      l = sum([x[1] for x in exp if x[0] in untrustworthy])
-      l_int = len([x[0] for x in exp if x[0] in untrustworthy])
-      diff['lime'].append((abs(prev_tot - mean), abs(l)))
+      # meanLime = round(mean, 1)
+      # l = sum([x[1] for x in exp if x[0] in untrustworthy])
+      # l_int = len([x[0] for x in exp if x[0] in untrustworthy])
+      # diff['lime'].append((abs(prev_tot - mean), abs(l)))
 
       exp = exps['shap'][i]
-      #print('shap',round(SHAP.explainer.expected_value[1],2),[(x[0], round(x[1],1)) for x in exp])
       prev_tot = predict_probas[i]
       prev_tot2 = SHAP.explainer.expected_value[1] + sum([x[1] for x in exp])
       tot = prev_tot2 - sum([x[1] for x in exp if x[0] in untrustworthy])
       trust['shap'].add(i) if trust_fn(tot, prev_tot2) else mistrust['shap'].add(i)
 
-      b = sum([x[1] for x in exp if x[0] in untrustworthy])
-      b_int = len([x[0] for x in exp if x[0] in untrustworthy])
-      diff['shap'].append((abs(prev_tot - SHAP.explainer.expected_value[1]), abs(b)))
+      # b = sum([x[1] for x in exp if x[0] in untrustworthy])
+      # b_int = len([x[0] for x in exp if x[0] in untrustworthy])
+      # diff['shap'].append((abs(prev_tot - SHAP.explainer.expected_value[1]), abs(b)))
 
       #print('lime', meanLime, "-" if l<0 else '+', abs(l), '| shap', round(SHAP.explainer.expected_value[1],1),
       #      "-" if b<0 else '+', abs(b), "| pred:", round(prev_tot,1))
@@ -183,13 +172,7 @@ def main(dataset, algorithm, parameters):
       tot = mean - sum([x[1] for x in exp if x[0] in untrustworthy])
       trust['parzen'].add(i) if trust_fn(tot, prev_tot) else mistrust['parzen'].add(i)
 
-      """exp = exps['random'][i]
-      trust['random'].add(i) if trust_fn_all(exp, untrustworthy) else mistrust['random'].add(i)
-      exp = exps['greedy'][i]
-      trust['greedy'].add(i) if trust_fn_all(exp, untrustworthy) else mistrust['greedy'].add(i)"""
-
     for expl in explainer_names:
-      # switching the definition
       false_positives = set(trust[expl]).intersection(shouldnt_trust)
       true_positives = set(trust[expl]).difference(shouldnt_trust)
       false_negatives = set(mistrust[expl]).difference(shouldnt_trust)
@@ -231,9 +214,6 @@ def main(dataset, algorithm, parameters):
 
   #added, to verify initial explanation accuracy
   for expl in explainer_names:
-    """if expl=='random' or expl=='greedy':
-      accuracy[expl] = np.nan
-      continue"""
     acc = accuracy[expl]
     acc = sum(acc)/len(acc)
     accuracy[expl] = acc

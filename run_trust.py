@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 
 DATASETS = [('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
-ALGORITHMS = [('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
+ALGORITHMS = ['neighbors', 'NN'] #[('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if True:
