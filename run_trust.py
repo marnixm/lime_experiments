@@ -7,9 +7,9 @@ from explanability_metric import *
 import os
 import matplotlib.pyplot as plt
 
-DATASETS = [('multi_polarity_books','Books'),('multi_polarity_kitchen','Kitchen'), ('multi_polarity_dvd','DVDs')]
+DATASETS = [('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
 ALGORITHMS = [('logreg', 'LR'), ('tree','Tree'), ('svm','SVM'), ('random_forest' ,'RF')]
-EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')] #, ('greedy','Greedy'), ('random','Random')]
+EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if True:
   # Use generated data instead of multi polarity
@@ -17,15 +17,15 @@ if True:
 
 #TODO check and run parameters
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
-              'lime': {'num_samples': 2000, 'rho': 25},
-              'shap': {'nsamples': 2000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+              'lime': {'num_samples': 1000, 'rho': 25},
+              'shap': {'nsamples': 1000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'rf': {'n_estimators': 1000}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
-              'max_examples': 10, #None
-              'test_against': 'lime',
+              'max_examples': 200, #None
+              'test_against': 'shap',
               'Gen_count': 0, #to pick synthetic data parameters
-              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000}, #todo change params
+              'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
               'Gen2': {'n_inf': 10, 'n_redundant': 20, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
               'Gen3': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000},
               'Gen4': {'n_inf': 10, 'n_redundant': 20, 'n_features': 50, 'noise': 0.3, 'seed': 1, 'nrows': 2000}}
@@ -83,10 +83,12 @@ def run_5_3(save=True):
 
   print('total time:', totalTime)
   if save:
+    PARAMS_5_3['Gen_count'] = 0
     pickle.dump(F1, open(path + result_file + '.p', "wb"))
     pickle.dump(resultsTotal, open(path + result_file + '_total.p', "wb"))
     #pickle.dump(calcTimes, open(path + filename2, "wb"))
     for d, dat in enumerate(DATASETS):
+      PARAMS_5_3['Gen_count'] += 1
       dat = dat[1] + (str(PARAMS_5_3['Gen_count']) if dat[1]=="Gen" else "")
       pickle.dump(F1[d], open(path + "Datasets/" + dat + '_F1.p', "wb"))
       pickle.dump(Precision[d], open(path + "Datasets/" + dat + '_precision.p', "wb"))
