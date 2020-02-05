@@ -36,7 +36,8 @@ class ParzenWindowClassifier:
         pr = self.kernel(b, self.sigma)
         prob = sum(pr[self.ones]) / sum(pr)
         return int(prob > .5)
-    def predict_proba(self, x):
+    def predict_proba(self, x, dataset):
+        x = x.toarray() if not dataset=="Generated" else x
         b = sp.sparse.csr_matrix(x - self.X)
         #pr = np.array([self.kernel(z, self.sigma) for z in b])
         pr = self.kernel(b, self.sigma)

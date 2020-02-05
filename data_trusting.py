@@ -75,7 +75,7 @@ def main(dataset, algorithm, parameters):
   else:
     kernel = lambda d: np.sqrt(np.exp(-(d**2) / rho ** 2))
     LIME = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text,
-                                                num_samples=num_samples, return_mean=True, return_mapped=True)
+                                                num_samples=num_samples, return_mean=True, return_mapped=True, verbose=False)
   nsamples, n_clusters = parameters['shap']['nsamples'], parameters['shap']['n_clusters']
   SHAP = explainers.ShapExplainer(classifier, train_vectors, nsamples=nsamples,
                                   num_features=parameters['shap']['num_features'],
@@ -115,7 +115,7 @@ def main(dataset, algorithm, parameters):
     exps['shap'].append(exp)
 
     exp = parzen.explain_instance(test_vectors[i], 1, classifier.predict_proba, num_features, dataset)
-    mean = parzen.predict_proba(test_vectors[i])[1]
+    mean = parzen.predict_proba(test_vectors[i], dataset)[1]
     accuracy['parzen'].append(trust_fn(predict_probas[i],
                                      mean + sum([x[1] for x in exp])))
     exps['parzen'].append((exp, mean))

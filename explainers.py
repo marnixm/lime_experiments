@@ -51,7 +51,8 @@ class LimeTabExplainer:
     self.explainer = lime.lime_tabular.LimeTabularExplainer(training_data=background_data,
                                                             kernel_width=None, #can be specified
                                                             feature_selection='auto',
-                                                            discretize_continuous=False)
+                                                            discretize_continuous=False,
+                                                            verbose=False)
   def explain_instance(self, *args, **kwds):
     instance_vector = args[0]
     classifier_fn = args[2]
