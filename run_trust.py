@@ -8,7 +8,7 @@ from explanability_metric import *
 import data_trusting
 
 DATASETS = [('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
-ALGORITHMS = [('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
+ALGORITHMS = [('neighbors', 'NN')] #[('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if False:
@@ -16,12 +16,12 @@ if False:
   DATASETS = [('Generated', 'Gen')] * 4
 
 PARAMS_5_3 = {'percent_untrustworthy': .25, 'num_rounds': 10,
-              'lime': {'num_samples': 200, 'rho': 25},
-              'shap': {'nsamples': 200, 'n_clusters': 10, 'num_features': 'num_features(10)'},
+              'lime': {'num_samples': 15000, 'rho': 25},
+              'shap': {'nsamples': 15000, 'n_clusters': 10, 'num_features': 'num_features(10)'},
               'rf': {'n_estimators': 1000}, #n_est: 1000
               'num_features': 10,
               'parzen_num_cv': 5,
-              'max_examples': 10, #None for all 400 instances
+              'max_examples': None, #None for all 400 instances
               'test_against': 'shap',
               'Gen_count': 0, #to pick synthetic data parameters
               'Gen1': {'n_inf': 10, 'n_redundant': 0, 'n_features': 50, 'noise': 0.05, 'seed': 1, 'nrows': 2000},
@@ -127,4 +127,4 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
   return
 
 run_5_3(save=True)
-table_5_3(stats=['precision', 'recall', 'accuracy'], save=False, f2=True) # stats options:'precision', 'recall', 'accuracy', 'f1'
+table_5_3(stats=[], save=False, f2=True) # stats options:'precision', 'recall', 'accuracy', 'f1'
