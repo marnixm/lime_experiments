@@ -8,7 +8,7 @@ from explanability_metric import *
 import data_trusting
 
 DATASETS = [('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
-ALGORITHMS = [('neighbors', 'NN')] #[('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
+ALGORITHMS = [('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if False:
