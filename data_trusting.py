@@ -112,6 +112,7 @@ def main(dataset, algorithm, parameters):
     exp = SHAP.explain_instance(test_vectors[i], None, None, None, dataset, predictPositive=True)
     accuracy['shap'].append(trust_fn(predict_probas[i],
                                      SHAP.explainer.expected_value[1] + sum([x[1] for x in exp])))
+
     exps['shap'].append(exp)
 
     exp = parzen.explain_instance(test_vectors[i], 1, classifier.predict_proba, num_features, dataset)
