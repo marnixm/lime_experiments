@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 from explanability_metric import *
 import data_trusting
 
-DATASETS = [('multi_polarity_dvd','DVDs')] #('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
-ALGORITHMS = [('svm','SVM')] #('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
+DATASETS = [('multi_polarity_books','Books'), ('multi_polarity_dvd','DVDs'), ('multi_polarity_kitchen','Kitchen')]
+ALGORITHMS = [('logreg', 'LR'), ('neighbors', 'NN'), ('random_forest' ,'RF'), ('svm','SVM'), ('tree','Tree')]
 EXPLAINERS = [('shap','SHAP'), ('lime','LIME'), ('parzen','Parzen')]
 path = os.path.abspath(os.curdir) + '/Results_5.3/'
 if False:
@@ -126,5 +126,5 @@ def table_5_3(stats = ['F1'], save=False, f2=False):
       print(f1adj.round(1))
   return
 
-run_5_3(save=False)
+#run_5_3(save=False)
 table_5_3(stats=['precision', 'recall', 'accuracy'], save=False, f2=True) # stats options:'precision', 'recall', 'accuracy', 'f1'
