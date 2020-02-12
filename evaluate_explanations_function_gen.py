@@ -160,7 +160,7 @@ def main(dataset, algorithm, explain_method, parameters):
   evaluator.load_datasets([dataset], parameters)
   evaluator.vectorize_and_train([dataset], parameters)
   explain_fn = None
-  if explain_method == 'lime':
+  if explain_method == 'Lime':
     rho, num_samples = parameters['lime']['rho'], parameters['lime']['num_samples']
     if dataset=="Generated":
       explainer = explainers.LimeTabExplainer(evaluator.train_vectors[dataset], nsamples=num_samples, K=parameters['max_examples'])
@@ -169,7 +169,7 @@ def main(dataset, algorithm, explain_method, parameters):
       explainer = explainers.GeneralizedLocalExplainer(kernel, explainers.data_labels_distances_mapping_text, num_samples=num_samples,
                                                        return_mean=False, verbose=False, return_mapped=True)
     explain_fn = explainer.explain_instance
-  elif explain_method == 'parzen':
+  elif explain_method == 'Parzen':
     sigmas = {'multi_polarity_electronics': {'tree': 0.5, 'l1logreg': 1},
     'multi_polarity_kitchen': {'tree': 0.75, 'l1logreg': 2.0},
     'multi_polarity_dvd': {'tree': 8.0, 'l1logreg': 1},
@@ -187,7 +187,7 @@ def main(dataset, algorithm, explain_method, parameters):
   # elif explain_method == 'random':
   #  explainer = explainers.RandomExplainer()
   #  explain_fn = explainer.explain_instance
-  elif explain_method == 'shap':
+  elif explain_method == 'Shap':
     nsamples, num_features, n_clusters = parameters['shap']['nsamples'], parameters['shap']['num_features'], parameters['shap']['n_clusters']
     explainer = explainers.ShapExplainer(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],
                                          nsamples=nsamples, num_features=num_features,
