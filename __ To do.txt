@@ -1,0 +1,21 @@
+To do:
+- mention usefulness for accenture in conclusion
+- Mention Parzen's high recall in two instances
+- Parzen shows bad results with redundancy
+- choose title page/abstract
+- check references
+- lime perturbations
+
+- spelling:
+less > fewer
+amount > number
+table, figure > Table, Figure
+(in %)
+explainabilty
+
+
+Later:
+- rename github page? lime_experiments --> ..?
+  & improve readme file
+- *LIME experiment* for original, *experiment* for improved
+?? Check Parzen parameters & t-test
