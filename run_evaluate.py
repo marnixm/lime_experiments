@@ -10,11 +10,11 @@ import os
 
 DATASETS = ['multi_polarity_books', 'multi_polarity_dvd', 'multi_polarity_kitchen']
 DATA_NAMES = ['Books','DVDs','Kitchen']
-if True:
+if False:
   # Use generated data instead of multi polarity
   DATASETS = ['Generated'] * 4
   DATA_NAMES = ["Generated " + str(i + 1) for i in range(4)]
-ALGORITHM = ['l1logreg', 'tree']
+ALGORITHM = ['tree', 'l1logreg']
 ALG_NAMES = ['Logistic regression','Decision tree']
 EXPLAINER = ['Shap', 'Lime', 'Parzen']
 # collection of parameters used by the experiment and explainers
