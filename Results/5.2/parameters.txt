@@ -1,5 +1,0 @@
-{'lime': {'num_samples': 15000, 'rho': 25},
- 'max_examples': None,
- 'max_iter_logreg': 2000,
- 'parzen_num_cv': 5,
- 'shap': {'K': 10, 'nsamples': 15000, 'num_features': 'num_features(10)'}}
