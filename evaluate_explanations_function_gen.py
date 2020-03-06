@@ -142,7 +142,7 @@ class ExplanationEvaluator:
           #Faithfulness
           FAITH = faithfulness(exp, self.classifiers[d][c], self.test_vectors[d][i], self.perturb_instance[d])
           faith[d][c].append(FAITH)
-          #Ndcg
+          #NDCG
           NDCG = ndcg_score(true_features, exp_features)
           ndcg[d][c].append(NDCG*RECALL) #we use recall to adjust for the cut-off at minimum length
           if max_examples and i >= max_examples:
@@ -181,12 +181,7 @@ def main(dataset, algorithm, explain_method, parameters):
     explainer.fit(evaluator.train_vectors[dataset], cv_preds, dataset)
     explainer.sigma = sigmas[dataset][algorithm]
     explain_fn = explainer.explain_instance
-  # greedy/random cannot be score by faithfullness measure
-  # elif explain_method == 'greedy':
-  #  explain_fn = explainers.explain_greedy
-  # elif explain_method == 'random':
-  #  explainer = explainers.RandomExplainer()
-  #  explain_fn = explainer.explain_instance
+
   elif explain_method == 'Shap':
     nsamples, num_features, n_clusters = parameters['shap']['nsamples'], parameters['shap']['num_features'], parameters['shap']['n_clusters']
     explainer = explainers.ShapExplainer(evaluator.classifiers[dataset][algorithm], evaluator.train_vectors[dataset],

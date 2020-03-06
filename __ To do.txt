@@ -1,9 +1,0 @@
-To do:
-- Mention Parzen's high recall in two instances?
-- Parzen shows bad results with redundancy?
-
-Later:
-- rename github page? lime_experiments --> ..?
-  & improve readme file
-- *LIME experiment* for original, *experiment* for improved
-?? Check Parzen parameters & t-test

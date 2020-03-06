@@ -1,2 +1,0 @@
-C:\Users\marnix.maas\OneDrive - Accenture\lime-experiments-master>
-python C:\Users\marnix.maas\anaconda\Tools\scripts\2to3.py . -w
