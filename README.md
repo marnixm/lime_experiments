@@ -17,7 +17,7 @@ To run the experiment, use function `run_5_2()` on the bottom of the script.
 
 To show the results of the experiment, use function `plot_5_2()` and give a results file as parameter.
 
-## Experiment in section 5.3:
+## Experiment 5.3:
 To run the this experiment, use `run_trust.py`. All parameter are specified on the top of the file. 
 1. DATASET -> 'multi_polarity_books', 'multi_polarity_kitchen', 'multi_polarity_dvd'
 2. ALGORITHM -> 'logreg', 'NN', 'random_forest', 'svm', 'tree'
