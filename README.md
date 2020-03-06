@@ -5,7 +5,7 @@ Credit is given to the original creators of the experiment from the [Lime paper]
 Requirements of all packages can be found in file:
 `requirements.txt`
 
-For any questions regarding these experiments, please contact [me](mailto:marnixmaas@live.nl). (marnixmaas@live.nl)
+For any questions regarding these experiments, please contact [me](mailto:marnixmaas@live.nl).
 
 ## Experiment 5.2:
 To run the this experiment, use `run_evaluate.py`. All parameter are specified on the top of the file. 
