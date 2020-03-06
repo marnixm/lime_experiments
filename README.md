@@ -1,40 +1,39 @@
-This repository contains the code to run the experiments present in [this paper](http://arxiv.org/abs/1602.04938). The code here is frozen to what it was when we originally wrote the paper. If you're interested in using LIME, check out [this repository](https://github.com/marcotcr/lime), where we have packaged it up, improved the code quality, added visualizations and other improvements.
+## M. Maas (2020). How do you explain that? An assessment of black box model explainers.
 
-Running the commands below should be enough to get all of the results. You need specific versions python, sklearn, numpy, scipy. Install requirements in a virtualenv using:
+Credit is given to the original creators of the experiment from the [Lime paper](http://arxiv.org/abs/1602.04938). If you're interested in using LIME, check out [this repository](https://github.com/marcotcr/lime).
 
-`pip install -r requirements.txt`
+Requirements of all packages can be found in file:
+`requirements.txt`
 
-If we forgot something, please email the first author. 
+For any questions regarding these experiments, please contact [me](mailto:marnixmaas@live.nl). (marnixmaas@live.nl)
 
-## Experiment in section 5.2:
-- DATASET -> 'multi_polarity_books', 'multi_polarity_kitchen', 'multi_polarity_dvd', 'multi_polarity_kitchen'
-- ALGORITHM -> 'l1logreg', 'tree'
-- EXPLAINER -> 'lime', 'parzen', 'greedy' or 'random'
-    
-        python evaluate_explanations.py --dataset DATASET --algorithm ALGORITHM --explainer EXPLAINER 
+## Experiment 5.2:
+To run the this experiment, use `run_evaluate.py`. All parameter are specified on the top of the file. 
+1. DATASET -> 'multi_polarity_books', 'multi_polarity_kitchen', 'multi_polarity_dvd'
+2. ALGORITHM -> 'l1logreg', 'tree'
+3. EXPLAINER -> 'Shap', 'lime', 'parzen'
+
+To run the experiment, use function `run_5_2()` on the bottom of the script.
+
+To show the results of the experiment, use function `plot_5_2()` and give a results file as parameter.
 
 ## Experiment in section 5.3:
-- DATASET -> 'multi_polarity_books', 'multi_polarity_kitchen', 'multi_polarity_dvd', 'multi_polarity_kitchen'
-- ALGORITHM -> 'logreg', 'random_forest', 'svm', 'tree' or 'embforest', although you would need to set up word2vec for embforest
+To run the this experiment, use `run_trust.py`. All parameter are specified on the top of the file. 
+1. DATASET -> 'multi_polarity_books', 'multi_polarity_kitchen', 'multi_polarity_dvd'
+2. ALGORITHM -> 'logreg', 'NN', 'random_forest', 'svm', 'tree'
+3. EXPLAINER -> 'Shap', 'lime', 'parzen'
 
-        python data_trusting.py -d DATASET -a ALGORITHM -k 10 -u .25 -r NUM_ROUNDS
+To run the experiment, use function `run_5_3()` on the bottom of the script.
 
-## Experiment in section 5.4:
-- NUM_ROUNDS -> Desired number of rounds
-- DATASET -> 'multi_polarity_books', 'multi_polarity_kitchen', 'multi_polarity_dvd', 'multi_polarity_kitchen'
-- PICK -> 'submodular' or 'random'
-Run the following with the desired number of rounds:
-
-        mkdir out_comparing
-
-        python generate_data_for_compare_classifiers.py -d DATASET -o out_comparing/ -k 10 -r NUM_ROUNDS
-
-        python compare_classifiers.py -d DATASET -o out_comparing/ -k 10 -n 10 -p PICK
-
-
-## Religion dataset:
-Available [here](https://github.com/marcotcr/lime-experiments/blob/master/religion_dataset.tar.gz)
+To show the results of the experiment, use function `table_5_3()`. Choose either statistic, or the adjusted F1 score.
 
 ## Multi-polarity datasets:
-I got them from [here](https://www.cs.jhu.edu/~mdredze/datasets/sentiment/)
-"# lime_experiments" 
+I got them from [here](https://www.cs.jhu.edu/~mdredze/datasets/sentiment/). Second option: [processed_acl.tar.gz]
+
+## About the author
+Marnix Maas. For bio see [LinkedIn](https://www.linkedin.com/in/marnixwmaas/)
+
+Thesis for Master Business Analytics at the VU University of Amsterdam & Accenture Netherlands.
+
+Supervisor of exact sciences department: Sandjai Bhulai.
+
